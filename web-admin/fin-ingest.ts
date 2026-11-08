@@ -4,8 +4,8 @@ const j = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, 
 /* Import des dépenses pub (appelé par la tâche planifiée). Protégé par la clé fin_key de private.config. */
 Deno.serve(async (req) => {
   if (req.method !== "POST") return j({ error: "method" }, 405);
-  const { data: k } = await sb.schema("private").from("config").select("value").eq("key", "fin_key").maybeSingle();
-  if (!k?.value || req.headers.get("x-fin-key") !== k.value) return j({ error: "forbidden" }, 403);
+  const { data: ok } = await sb.rpc("fin_key_ok", { k: req.headers.get("x-fin-key") || "" });
+  if (ok !== true) return j({ error: "forbidden" }, 403);
   const body = await req.json().catch(() => ({}));
   const rows: any[] = Array.isArray(body.rows) ? body.rows : [];
   if (!rows.length || rows.length > 2000) return j({ error: "rows" }, 400);
