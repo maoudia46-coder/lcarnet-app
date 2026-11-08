@@ -84,8 +84,9 @@ function css(){if(document.getElementById('fincss'))return;const st=document.cre
 .chipb{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;cursor:pointer}.chipb[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}.fg .w{grid-column:1/-1}
 .mini{font-size:12px;color:var(--muted)}
+.chart{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:8px}.cb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;color:var(--muted);text-align:center;min-width:0}.cb i{display:block;width:70%;border-radius:4px 4px 0 0}.cv{font-weight:700;color:var(--ink);font-size:10px}
 .pay{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}.pay.oui{background:var(--ok-s);color:var(--ok)}.pay.non{background:var(--bad-s);color:var(--bad)}.pay.partiel{background:var(--warn-s);color:var(--warn)}
-@media(max-width:900px){.big{grid-template-columns:repeat(2,1fr)}.grp{grid-template-columns:1fr}}
+@media(max-width:900px){.big{grid-template-columns:repeat(2,1fr)}.grp{grid-template-columns:1fr!important}}
 @media(max-width:480px){.big{grid-template-columns:1fr 1fr}.bk b{font-size:19px}.fg{grid-template-columns:1fr}}`;document.head.appendChild(st)}
 
 function periods(){
@@ -103,12 +104,13 @@ async function show(){
   draw();
 }
 function draw(){
-  const tabs=[['bord','Vue d’ensemble'],['sponsos','Sponsos'],['enc','Encaissements'],['abos','Abonnements'],['pub','Pub (auto)'],['reg','Réglages']];
+  const nDue=new Set(D.sp.filter(r=>r.debut>=addDays(today(),-365)&&(+r.prix||0)>(+r.montant_paye||0)).map(r=>ck(r.client))).size;
+  const tabs=[['bord','Vue d’ensemble'],['sponsos','Sponsos'],['clients','Clients'],['imp','Impayés'+(nDue?' ('+nDue+')':'')],['enc','Encaissements'],['abos','Abonnements'],['pub','Pub (auto)'],['reg','Réglages']];
   app.innerHTML=`<div class="fhead"><h1>Finances ADM Digital</h1><select id="fper">${periods()}</select><button class="btn" id="frl">↻</button></div>
   <nav class="ftabs">${tabs.map(([k,l])=>`<button data-t="${k}" aria-selected="${TAB===k}">${l}</button>`).join('')}</nav><div id="fv"></div>`;
   $('#fper').onchange=e=>{PER=e.target.value;draw()};$('#frl').onclick=async()=>{D=null;await show();toast('Données à jour')};
   app.querySelectorAll('.ftabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;draw()});
-  ({bord,sponsos,enc,abos,pub,reg})[TAB]();
+  ({bord,sponsos,clients,imp,enc,abos,pub,reg})[TAB]();
 }
 function bord(){
   const R=calc(),all=sumG(R,Object.keys(BIZ));
@@ -130,9 +132,63 @@ function bord(){
     ${ln('Revenus',da(L.rev))}${ln('Frais',da(L.cost))}<div class="ln tot"><span>Bénéfice</span>${sg(L.net)}</div>${sl('lcarnet')}${sl('admauto')}</div>
    <div class="gc" style="--gc:${BIZ.boutique.c}"><h3>🛍️ Boutique en ligne</h3><div class="sub">Création de boutiques · ADM E-commerce</div>
     ${ln('Revenus',da(B.rev))}${ln('Frais',da(B.cost))}<div class="ln tot"><span>Bénéfice</span>${sg(B.net)}</div>${sl('boutique')}${sl('ecommerce')}</div></div>
+  ${spBoard()}
   <div class="oth"><b>Autres services</b><span>🎬 UGC ${da((R.ugc||Z).rev)}</span><span>📄 Landing ${da((R.landing||Z).rev)}</span><span>• Autre ${da((R.autre||Z).rev)}</span><span style="margin-left:auto">Bénéfice ${sg(A.net)}</span></div>
   <div class="oth"><b>🧾 Frais communs</b><span>Abonnements (Supabase, Vercel, outils…) ${da(G.subs)}</span><span class="mini">Taux : 1 $ = ${D.rate.USD} DA</span>
    <span style="margin-left:auto">${D.spend.length?'Pub mise à jour '+ago(D.spend.reduce((a,r)=>r.updated_at>a?r.updated_at:a,'')):'Pub : pas encore importée'}</span></div>`;
+}
+/* ---------- tableau de bord sponsoring ---------- */
+const ck=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+const finOf=r=>r.jours?addDays(r.debut,r.jours):null;
+function spBoard(){
+  const t=today(),t3=addDays(t,3),run=D.sp.filter(r=>r.debut<=t&&finOf(r)&&finOf(r)>t).sort((a,b)=>finOf(a).localeCompare(finOf(b)));
+  const end=run.filter(r=>finOf(r)<=t3);
+  const map={};D.sp.forEach(r=>{const k=r.debut.slice(0,7);map[k]=(map[k]||0)+(+r.prix||0)-(+r.budget_usd||0)*(+r.taux||0)});
+  let ks=Object.keys(map).sort();const cur=ymNow();if(!ks.includes(cur)){ks.push(cur);map[cur]=0}ks=ks.slice(-12);
+  const mx=Math.max(1,...ks.map(k=>map[k]));
+  const bars=ks.map(k=>{const v=Math.max(0,map[k]),h=Math.round(v/mx*120);const[y,m]=k.split('-');return `<div class="cb" title="${mLabel(k)} : ${da(map[k])}"><span class="cv">${v>=1000?nf.format(Math.round(v/1000))+'k':nf.format(v)}</span><i style="height:${Math.max(2,h)}px;background:${k===cur?'var(--sky)':'var(--acc)'}"></i><span>${MOIS[+m-1].slice(0,3)}${m==='01'||k===ks[0]?'<br>'+y:''}</span></div>`}).join('');
+  const top=Object.values(D.sp.filter(r=>inP(r.debut)).reduce((a,r)=>{const k=ck(r.client);const c=a[k]||(a[k]={n:r.client,b:0,c:0});c.b+=(+r.prix||0)-(+r.budget_usd||0)*(+r.taux||0);c.c++;return a},{})).sort((a,b)=>b.b-a.b).slice(0,6);
+  const li=(a,b,c)=>`<div class="ln"><span><b style="color:var(--ink)">${a}</b><br><span class="mini">${b}</span></span><span>${c}</span></div>`;
+  return `<div class="grp" style="grid-template-columns:1.4fr 1fr 1fr">
+   <div class="gc" style="--gc:var(--acc)"><h3>📈 Bénéfice sponsoring par mois</h3><div class="sub">12 derniers mois avec activité</div><div class="chart">${bars}</div></div>
+   <div class="gc" style="--gc:var(--ok)"><h3>▶ En cours (${run.length})</h3><div class="sub">${usd(run.reduce((a,r)=>a+(+r.usd_jour||0),0))} / jour</div>${run.slice(0,8).map(r=>li(esc(r.client),'jusqu’au '+frD(finOf(r))+' · '+nf2.format(r.usd_jour||0)+' $/j',`<span class="pay ${r.paye}">${r.paye==='oui'?'Payé':'À payer'}</span>`)).join('')||'<p class="mini">Aucun sponso en cours.</p>'}</div>
+   <div class="gc" style="--gc:var(--warn)"><h3>⏰ Se terminent dans 3 jours</h3><div class="sub">Propose un renouvellement</div>${end.map(r=>li(esc(r.client),'fin le '+frD(finOf(r)),'')).join('')||'<p class="mini">Rien ne se termine bientôt.</p>'}
+    <h3 style="margin-top:16px">🏆 Meilleurs clients</h3>${top.map(c=>li(esc(c.n),c.c+' sponso'+(c.c>1?'s':''),sg(c.b))).join('')||'<p class="mini">—</p>'}</div></div>`;
+}
+/* ---------- clients ---------- */
+let CQ='',CS='last';
+function groupC(rows){const m=new Map();rows.forEach(r=>{const k=ck(r.client);const c=m.get(k)||{k,n:r.client,c:0,p:0,b:0,du:0,last:'',rows:[]};c.c++;c.p+=+r.prix||0;c.b+=(+r.prix||0)-(+r.budget_usd||0)*(+r.taux||0);c.du+=Math.max(0,(+r.prix||0)-(+r.montant_paye||0));c.rows.push(r);if(r.debut>c.last){c.last=r.debut;c.n=r.client}m.set(k,c)});return[...m.values()]}
+function clients(){
+  let cs=groupC(D.sp);if(CQ)cs=cs.filter(c=>c.k.includes(ck(CQ)));
+  cs.sort((a,b)=>CS==='benef'?b.b-a.b:CS==='due'?b.du-a.du:CS==='count'?b.c-a.c:b.last.localeCompare(a.last));
+  $('#fv').innerHTML=`<div class="bar"><input id="fcq" placeholder="Chercher un client…" value="${esc(CQ)}"><select class="in" id="fcs" style="width:auto">${[['last','Plus récents'],['benef','Plus rentables'],['due','Doivent le plus'],['count','Plus de sponsos']].map(([v,l])=>`<option value="${v}"${v===CS?' selected':''}>${l}</option>`).join('')}</select></div>
+  <div class="prods">${cs.slice(0,200).map(c=>`<button class="prod" data-k="${esc(c.k)}" style="--pc:var(--acc)"><div class="pn" style="font-size:17px">${esc(c.n)}</div><div class="pk">Sponsos <b style="font-size:15px">${c.c}</b><br>Bénéfice total <b style="font-size:15px">${da(c.b)}</b><br>Doit <b style="font-size:15px;color:${c.du?'var(--warn)':'inherit'}">${da(c.du)}</b><br><span class="mini">Dernier sponso le ${frD(c.last)}</span></div></button>`).join('')||'<p class="mini">Aucun client.</p>'}</div>`;
+  $('#fcq').oninput=e=>{CQ=e.target.value;const p=e.target.selectionStart;clients();const i=$('#fcq');i.focus();i.setSelectionRange(p,p)};
+  $('#fcs').onchange=e=>{CS=e.target.value;clients()};
+  app.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const c=groupC(D.sp).find(x=>x.k===b.dataset.k);
+    const m=modal(`<h3>${esc(c.n)}</h3><p>${c.c} sponsos · bénéfice ${da(c.b)} · doit ${da(c.du)}</p><div style="max-height:50vh;overflow:auto">${c.rows.sort((a,b)=>b.debut.localeCompare(a.debut)).map(r=>`<div class="ln" style="cursor:pointer" data-id="${esc(r.id)}"><span>${frD(r.debut)}${r.jours?' · '+r.jours+' j':''} · ${da(r.prix)}</span><span class="pay ${r.paye}">${r.paye==='oui'?'Payé':r.paye==='partiel'?'Avance':'Non payé'}</span></div>`).join('')}</div><div class="row"><button class="btn" data-x>Fermer</button><button class="btn p" id="cnew">+ Nouveau sponso</button></div>`);
+    m.querySelectorAll('[data-id]').forEach(x=>x.onclick=()=>{m.remove();spForm(D.sp.find(r=>r.id===x.dataset.id))});
+    $('#cnew').onclick=()=>{m.remove();const l=c.rows[0];spForm(null,{client:c.n,page:l.page,usd_jour:l.usd_jour,jours:l.jours,prix:l.prix})}})
+}
+/* ---------- impayés ---------- */
+let DR='12';
+function imp(){
+  const since=DR==='12'?addDays(today(),-365):'0000';
+  const cs=groupC(D.sp.filter(r=>r.debut>=since&&(+r.prix||0)>(+r.montant_paye||0))).sort((a,b)=>b.du-a.du);
+  $('#fv').innerHTML=`<div class="bar"><b style="flex:1">${cs.length?da(cs.reduce((a,c)=>a+c.du,0))+' à récupérer chez '+cs.length+' client'+(cs.length>1?'s':''):'Tout est encaissé 👌'}</b>
+   <button class="chipb" data-d="12" aria-pressed="${DR==='12'}">12 derniers mois</button><button class="chipb" data-d="all" aria-pressed="${DR==='all'}">Tout l’historique</button></div>
+   ${cs.map(c=>`<div class="gc" style="--gc:var(--warn);margin-bottom:12px"><h3 style="justify-content:space-between">${esc(c.n)}<span style="color:var(--warn)">${da(c.du)}</span></h3>
+    ${c.rows.map(r=>`<div class="ln"><span>${frD(r.debut)}${r.jours?' · '+r.jours+' j':''}${r.campagne?' · '+esc(r.campagne):''}</span><b>${da(Math.max(0,(+r.prix||0)-(+r.montant_paye||0)))}</b></div>`).join('')}
+    <div class="row" style="justify-content:flex-start"><button class="btn sm p" data-pay="${esc(c.k)}">Tout marquer payé</button><button class="btn sm" data-rem="${esc(c.k)}">Message de relance</button></div></div>`).join('')}`;
+  app.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{DR=b.dataset.d;imp()});
+  const rowsOf=k=>D.sp.filter(r=>r.debut>=since&&ck(r.client)===k&&(+r.prix||0)>(+r.montant_paye||0));
+  app.querySelectorAll('[data-pay]').forEach(b=>b.onclick=async()=>{if(!b.dataset.a){b.dataset.a=1;b.textContent='Confirmer : tout est payé';return}
+    for(const r of rowsOf(b.dataset.pay)){const{error}=await sb.from('fin_sponsos').update({paye:'oui',montant_paye:r.prix,updated_at:new Date().toISOString()}).eq('id',r.id);if(error)return toast('Erreur : '+error.message)}
+    D=null;await show();toast('Marqué comme payé')});
+  app.querySelectorAll('[data-rem]').forEach(b=>b.onclick=()=>{const rs=rowsOf(b.dataset.rem),n=rs[0].client,tot=rs.reduce((a,r)=>a+(+r.prix||0)-(+r.montant_paye||0),0);
+    const txt='‏السلام عليكم '+n+'،\n‏نفكرك برك بالخلاص تاع السبونسو :\n'+rs.map(r=>'‏- '+frD(r.debut)+(r.jours?' ('+r.jours+' أيام)':'')+' : '+nf.format(Math.max(0,(+r.prix||0)-(+r.montant_paye||0)))+' دج').join('\n')+'\n‏المجموع : '+nf.format(tot)+' دج\n‏يعطيك الصحة، آ دي آم ديجيتال';
+    const m=modal(`<h3>Message de relance</h3><textarea class="in" id="rt" rows="8" dir="rtl" style="font-family:Cairo,sans-serif">${esc(txt)}</textarea><div class="row"><button class="btn" data-x>Fermer</button><button class="btn p" id="rc">Copier</button></div>`);
+    $('#rc').onclick=async()=>{try{await navigator.clipboard.writeText($('#rt').value);toast('Message copié')}catch(e){$('#rt').select();toast('Copie avec Ctrl+C')}}});
 }
 /* ---------- sponsos ---------- */
 function sponsos(){
@@ -149,8 +205,8 @@ function sponsos(){
   app.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{SF=b.dataset.f;sponsos()});
   $('#fadd').onclick=()=>spForm(null);app.querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>spForm(D.sp.find(r=>r.id===tr.dataset.id)));
 }
-function spForm(r){
-  const v=r||{client:'',page:'',campagne:'',compte:'Mhd 1',plateforme:'Facebook',debut:today(),jours:'',usd_jour:'',taux:D.S.usd_dzd||255,prix:'',paye:'non',montant_paye:'',note:''};
+function spForm(r,pre){
+  const v=r||{...{client:'',page:'',campagne:'',compte:'Mhd 1',plateforme:'Facebook',debut:today(),jours:'',usd_jour:'',taux:D.S.usd_dzd||255,prix:'',paye:'non',montant_paye:'',note:''},...(pre||{})};
   const m=modal(`<h3>${r?'Modifier le sponso':'Nouveau sponso'}</h3><form id="spf"><div class="fg">
    <div><label>Client</label><input class="in" name="client" required value="${esc(v.client)}"></div><div><label>Page</label><input class="in" name="page" value="${esc(v.page||'')}"></div>
    <div class="w"><label>Campagne</label><input class="in" name="campagne" value="${esc(v.campagne||'')}"></div>
