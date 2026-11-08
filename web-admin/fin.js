@@ -22,7 +22,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 const mLabel=k=>{const[y,m]=k.split('-').map(Number);return MOIS[m-1][0].toUpperCase()+MOIS[m-1].slice(1)+' '+y};
 const addDays=(iso,n)=>{const[y,m,d]=iso.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10)};
 const frD=iso=>iso?iso.split('-').reverse().join('/'):'—';
-let D=null,PER=ymNow(),TAB='bord',SQ='',SF='all';
+let D=null,PER=ymNow(),TAB='bord',SQ='',SF='all',MODE='fin',TABF='bord',TABS='sdash';
 
 async function q(t,sel='*',order){let r=sb.from(t).select(sel);if(order)r=r.order(order,{ascending:false});const{data,error}=await r.limit(20000);if(error)throw error;return data||[]}
 async function loadAll(){
@@ -86,7 +86,9 @@ function css(){if(document.getElementById('fincss'))return;const st=document.cre
 .mini{font-size:12px;color:var(--muted)}
 .chart{display:flex;align-items:flex-end;gap:6px;height:170px;padding-top:8px}.cb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;color:var(--muted);text-align:center;min-width:0}.cb i{display:block;width:70%;border-radius:4px 4px 0 0}.cv{font-weight:700;color:var(--ink);font-size:10px}
 .pay{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700}.pay.oui{background:var(--ok-s);color:var(--ok)}.pay.non{background:var(--bad-s);color:var(--bad)}.pay.partiel{background:var(--warn-s);color:var(--warn)}
-@media(max-width:900px){.big{grid-template-columns:repeat(2,1fr)}.grp{grid-template-columns:1fr!important}}
+
+.big.b3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.big,.big.b3{grid-template-columns:repeat(2,1fr)}.grp{grid-template-columns:1fr!important}}
 @media(max-width:480px){.big{grid-template-columns:1fr 1fr}.bk b{font-size:19px}.fg{grid-template-columns:1fr}}`;document.head.appendChild(st)}
 
 function periods(){
@@ -97,20 +99,23 @@ function periods(){
 const sg=v=>`<b class="${v<0?'neg':'pos'}">${da(v)}</b>`;
 const ln=(l,v,cls='')=>`<div class="ln ${cls}"><span>${l}</span><b>${v}</b></div>`;
 
-async function show(){
-  VIEW='fin';$('#bSet').hidden=true;$('#bBack').hidden=true;$('#bOut').hidden=false;$('#crumb').textContent='Finances';css();
+async function show(mode){
+  if(mode)MODE=mode;TAB=MODE==='sp'?TABS:TABF;
+  VIEW='fin';$('#bSet').hidden=true;$('#bBack').hidden=true;$('#bOut').hidden=false;$('#crumb').textContent=MODE==='sp'?'Sponsoring':'Finances';css();
   if(!D){app.innerHTML='<p style="padding:40px;text-align:center;color:var(--muted)">Chargement des finances…</p>';
     try{await loadAll()}catch(e){app.innerHTML=`<div class="err" style="margin:30px 0">Erreur : ${esc(e.message||e)} <button class="btn sm" id="fre">Réessayer</button></div>`;$('#fre').onclick=()=>{D=null;show()};return}}
   draw();
 }
 function draw(){
   const nDue=new Set(D.sp.filter(r=>r.debut>=addDays(today(),-365)&&(+r.prix||0)>(+r.montant_paye||0)).map(r=>ck(r.client))).size;
-  const tabs=[['bord','Vue d’ensemble'],['sponsos','Sponsos'],['clients','Clients'],['imp','Impayés'+(nDue?' ('+nDue+')':'')],['enc','Encaissements'],['abos','Abonnements'],['pub','Pub (auto)'],['reg','Réglages']];
-  app.innerHTML=`<div class="fhead"><h1>Finances ADM Digital</h1><select id="fper">${periods()}</select><button class="btn" id="frl">↻</button></div>
+  const tabs=MODE==='sp'?[['sdash','Tableau de bord'],['sponsos','Sponsos'],['clients','Clients'],['imp','Impayés'+(nDue?' ('+nDue+')':'')]]:[['bord','Vue d’ensemble'],['enc','Encaissements'],['abos','Abonnements'],['pub','Pub (auto)'],['reg','Réglages']];
+  if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
+  app.innerHTML=`<div class="fhead"><h1>${MODE==='sp'?'📣 ADM Sponsoring':'💰 Finances ADM Digital'}</h1><select id="fper">${periods()}</select>${MODE==='sp'?'<button class="btn p" id="fadd2">+ Nouveau sponso</button>':''}<button class="btn" id="frl">↻</button></div>
   <nav class="ftabs">${tabs.map(([k,l])=>`<button data-t="${k}" aria-selected="${TAB===k}">${l}</button>`).join('')}</nav><div id="fv"></div>`;
   $('#fper').onchange=e=>{PER=e.target.value;draw()};$('#frl').onclick=async()=>{D=null;await show();toast('Données à jour')};
-  app.querySelectorAll('.ftabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;draw()});
-  ({bord,sponsos,clients,imp,enc,abos,pub,reg})[TAB]();
+  app.querySelectorAll('.ftabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;if(MODE==='sp')TABS=TAB;else TABF=TAB;draw()});
+  if($('#fadd2'))$('#fadd2').onclick=()=>spForm(null);
+  ({bord,sdash,sponsos,clients,imp,enc,abos,pub,reg})[TAB]();
 }
 function bord(){
   const R=calc(),all=sumG(R,Object.keys(BIZ));
@@ -132,10 +137,28 @@ function bord(){
     ${ln('Revenus',da(L.rev))}${ln('Frais',da(L.cost))}<div class="ln tot"><span>Bénéfice</span>${sg(L.net)}</div>${sl('lcarnet')}${sl('admauto')}</div>
    <div class="gc" style="--gc:${BIZ.boutique.c}"><h3>🛍️ Boutique en ligne</h3><div class="sub">Création de boutiques · ADM E-commerce</div>
     ${ln('Revenus',da(B.rev))}${ln('Frais',da(B.cost))}<div class="ln tot"><span>Bénéfice</span>${sg(B.net)}</div>${sl('boutique')}${sl('ecommerce')}</div></div>
-  ${spBoard()}
+  <div class="oth" style="cursor:pointer" id="goSp"><b>📣 Tableau de bord sponsoring</b><span>clients, impayés, bénéfice par mois, sponsos en cours</span><span style="margin-left:auto;color:var(--acc);font-weight:800">Ouvrir →</span></div>
   <div class="oth"><b>Autres services</b><span>🎬 UGC ${da((R.ugc||Z).rev)}</span><span>📄 Landing ${da((R.landing||Z).rev)}</span><span>• Autre ${da((R.autre||Z).rev)}</span><span style="margin-left:auto">Bénéfice ${sg(A.net)}</span></div>
   <div class="oth"><b>🧾 Frais communs</b><span>Abonnements (Supabase, Vercel, outils…) ${da(G.subs)}</span><span class="mini">Taux : 1 $ = ${D.rate.USD} DA</span>
    <span style="margin-left:auto">${D.spend.length?'Pub mise à jour '+ago(D.spend.reduce((a,r)=>r.updated_at>a?r.updated_at:a,'')):'Pub : pas encore importée'}</span></div>`;
+  $('#goSp').onclick=()=>{if(window.navOn)navOn('sp');show('sp')};
+}
+/* ---------- ADM Sponsoring : tableau de bord ---------- */
+function sdash(){
+  const pr=D.sp.filter(r=>inP(r.debut)),t=today();
+  const T=pr.reduce((a,r)=>{const c=(+r.budget_usd||0)*(+r.taux||0),rec=r.paye==='oui'?(+r.prix||0):(+r.montant_paye||0);a.p+=+r.prix||0;a.c+=c;a.u+=+r.budget_usd||0;a.r+=Math.min(rec,+r.prix||0);return a},{p:0,c:0,u:0,r:0});
+  const dueR=D.sp.filter(r=>r.debut>=addDays(t,-365)&&(+r.prix||0)>(+r.montant_paye||0));
+  const due=dueR.reduce((a,r)=>a+(+r.prix||0)-(+r.montant_paye||0),0);
+  const run=D.sp.filter(r=>r.debut<=t&&finOf(r)&&finOf(r)>t);
+  const b=T.p-T.c,mg=T.p?Math.round(b/T.p*100):0,pl=PER==='all'?'Tout l’historique':/^\d{4}$/.test(PER)?'Année '+PER:mLabel(PER);
+  $('#fv').innerHTML=`<div class="big b3">
+   <div class="bk hero"><span>Bénéfice</span>${sg(b)}<div class="mini" style="color:#9db8e8">${pl} · marge ${mg} %</div></div>
+   <div class="bk"><span>Chiffre d’affaires</span><b>${da(T.p)}</b><div class="mini">${pr.length} sponso${pr.length>1?'s':''}</div></div>
+   <div class="bk"><span>Dépense pub</span><b>${usd(T.u)}</b><div class="mini">${da(T.c)}</div></div>
+   <div class="bk"><span>Encaissé</span><b>${da(T.r)}</b><div class="mini">${T.p?Math.round(T.r/T.p*100)+' % du CA':'—'}</div></div>
+   <div class="bk"><span>À récupérer</span><b style="color:var(--warn)">${da(due)}</b><div class="mini">${new Set(dueR.map(r=>ck(r.client))).size} clients · 12 derniers mois</div></div>
+   <div class="bk"><span>En cours</span><b>${run.length}</b><div class="mini">${usd(run.reduce((a,r)=>a+(+r.usd_jour||0),0))} / jour</div></div></div>
+  ${spBoard()}`;
 }
 /* ---------- tableau de bord sponsoring ---------- */
 const ck=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
@@ -146,7 +169,7 @@ function spBoard(){
   const map={};D.sp.forEach(r=>{const k=r.debut.slice(0,7);map[k]=(map[k]||0)+(+r.prix||0)-(+r.budget_usd||0)*(+r.taux||0)});
   let ks=Object.keys(map).sort();const cur=ymNow();if(!ks.includes(cur)){ks.push(cur);map[cur]=0}ks=ks.slice(-12);
   const mx=Math.max(1,...ks.map(k=>map[k]));
-  const bars=ks.map(k=>{const v=Math.max(0,map[k]),h=Math.round(v/mx*120);const[y,m]=k.split('-');return `<div class="cb" title="${mLabel(k)} : ${da(map[k])}"><span class="cv">${v>=1000?nf.format(Math.round(v/1000))+'k':nf.format(v)}</span><i style="height:${Math.max(2,h)}px;background:${k===cur?'var(--sky)':'var(--acc)'}"></i><span>${MOIS[+m-1].slice(0,3)}${m==='01'||k===ks[0]?'<br>'+y:''}</span></div>`}).join('');
+  const bars=ks.map(k=>{const v=Math.max(0,map[k]),h=Math.round(v/mx*120);const[y,m]=k.split('-');return `<div class="cb" title="${mLabel(k)} : ${da(map[k])}"><span class="cv">${v>=1000?nf.format(Math.round(v/1000))+'k':nf.format(v)}</span><i style="height:${Math.max(2,h)}px;background:${k===cur?'var(--sky)':'var(--acc)'}"></i><span>${m==='06'?'juin':m==='07'?'juil':MOIS[+m-1].slice(0,3)}${m==='01'||k===ks[0]?'<br>'+y:''}</span></div>`}).join('');
   const top=Object.values(D.sp.filter(r=>inP(r.debut)).reduce((a,r)=>{const k=ck(r.client);const c=a[k]||(a[k]={n:r.client,b:0,c:0});c.b+=(+r.prix||0)-(+r.budget_usd||0)*(+r.taux||0);c.c++;return a},{})).sort((a,b)=>b.b-a.b).slice(0,6);
   const li=(a,b,c)=>`<div class="ln"><span><b style="color:var(--ink)">${a}</b><br><span class="mini">${b}</span></span><span>${c}</span></div>`;
   return `<div class="grp" style="grid-template-columns:1.4fr 1fr 1fr">
