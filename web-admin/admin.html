@@ -56,7 +56,7 @@ label{display:block;font-weight:600;font-size:13px;margin:12px 0 5px}
 .pk{font-size:14px;color:var(--muted);line-height:1.9}.pk b{font-size:22px;color:var(--ink)}.nw{color:var(--ok);font-weight:700}
 .tg{display:inline-block;border-radius:999px;padding:1px 9px;margin-right:6px;font-size:12px;font-weight:700}.tg.t{background:var(--info-s);color:var(--info)}.tg.a{background:var(--ok-s);color:var(--ok)}.tg.e{background:var(--warn-s);color:var(--warn)}
 </style></head><body>
-<header><div class="wrap"><div class="logo" id="home" style="cursor:pointer"><img src="/admin/logo.png" alt="">ADM <i>Digital</i><small id="crumb">Mes logiciels</small></div><button class="btn" id="bBack" hidden>← Mes logiciels</button><div class="sp"></div><button class="btn" id="bSoft" hidden>💻 Logiciels</button><button class="btn" id="bFin" hidden>💰 Finances</button><button class="btn" id="bSet" hidden>⚙ Réglages</button><button class="btn" id="bOut" hidden>Déconnexion</button></div></header>
+<header><div class="wrap"><div class="logo" id="home" style="cursor:pointer"><img src="/admin/logo.png" alt="">ADM <i>Digital</i><small id="crumb">Mes logiciels</small></div><button class="btn" id="bBack" hidden>← Mes logiciels</button><div class="sp"></div><button class="btn" id="bSoft" hidden>💻 Logiciels</button><button class="btn" id="bSp" hidden>📣 Sponsoring</button><button class="btn" id="bFin" hidden>💰 Finances</button><button class="btn" id="bSet" hidden>⚙ Réglages</button><button class="btn" id="bOut" hidden>Déconnexion</button></div></header>
 <main class="wrap" id="app"></main>
 <div id="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -87,7 +87,7 @@ const addYear=d=>{const b=d&&new Date(d)>new Date()?new Date(d):new Date();b.set
 let ROWS=[],F='all',Q='',VIEW='home';
 
 /* ---------- connexion ---------- */
-function loginView(msg,ok,mode){$('#bSet').hidden=$('#bOut').hidden=$('#bFin').hidden=$('#bSoft').hidden=true;
+function loginView(msg,ok,mode){$('#bSet').hidden=$('#bOut').hidden=$('#bFin').hidden=$('#bSoft').hidden=$('#bSp').hidden=true;
   const setup=mode==='setup';
   app.innerHTML=`<div id="login"><h2>${setup?'Créer mon accès admin':'Connexion administrateur'}</h2><p style="color:var(--muted);margin:0 0 6px">${setup?'Première fois : choisis ton mot de passe avec le code d\'installation.':'Réservé au propriétaire de la plateforme.'}</p>
   <form id="lf"><label>Email</label><input class="in" id="em" type="email" autocomplete="email" required>
@@ -111,8 +111,8 @@ async function home(){VIEW='home';navOn('soft');$('#bSet').hidden=true;$('#bBack
    .catch(e=>{if(/forbidden/.test(e.message)&&p.id==='auto'){sb.auth.signOut();loginView('Ce compte n\'a pas les droits administrateur.');return}const el=$('#k-'+p.id);if(el)el.textContent='⚠ '+e.message})}
 }
 window.onpopstate=()=>{if(VIEW!=='home'&&!document.querySelector('.modal-bg'))home()};
-function navOn(w){$('#bFin').hidden=$('#bSoft').hidden=false;$('#bFin').classList.toggle('on',w==='fin');$('#bSoft').classList.toggle('on',w==='soft')}
-$('#bFin').onclick=()=>{navOn('fin');history.pushState({f:1},'');FIN.show()};$('#bSoft').onclick=()=>home();
+function navOn(w){$('#bFin').hidden=$('#bSoft').hidden=$('#bSp').hidden=false;$('#bFin').classList.toggle('on',w==='fin');$('#bSp').classList.toggle('on',w==='sp');$('#bSoft').classList.toggle('on',w==='soft')}window.navOn=navOn;
+$('#bFin').onclick=()=>{navOn('fin');history.pushState({f:1},'');FIN.show('fin')};$('#bSp').onclick=()=>{navOn('sp');history.pushState({f:1},'');FIN.show('sp')};$('#bSoft').onclick=()=>home();
 $('#home').onclick=()=>{if(VIEW!=='home')home()};$('#bBack').onclick=()=>home();
 
 /* ---------- tableau ---------- */
@@ -199,4 +199,4 @@ $('#bOut').onclick=async()=>{await sb.auth.signOut();loginView('Tu es déconnect
 async function boot(){const{data}=await sb.auth.getSession();if(data.session)home();else loginView()}
 boot();setInterval(()=>{const a=document.activeElement;if(VIEW==='list'&&!document.querySelector('.modal-bg')&&document.visibilityState==='visible'&&$('#q')&&!(a&&a.tagName==='INPUT'))load()},60000);
 </script>
-<script src="/admin/fin.js"></script></body></html>
+<script src="/admin/fin.js?v=2"></script></body></html>
