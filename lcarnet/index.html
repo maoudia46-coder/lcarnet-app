@@ -111,6 +111,7 @@ ttq.page();
 </script>
 </head>
 <body>
+<script>/* Source d'inscription (1re visite) */(function(){try{if(localStorage.getItem('adm_src'))return;var q=new URLSearchParams(location.search),o={},k=['utm_source','utm_medium','utm_campaign','utm_term','utm_content','ad_id','placement'];k.forEach(function(x){var v=q.get(x);if(v)o[x]=v.slice(0,120)});if(q.get('fbclid'))o.fbclid=1;if(q.get('ttclid'))o.ttclid=1;var r=document.referrer;if(r&&r.indexOf(location.host)<0)o.ref=r.slice(0,120);o.ua=/FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent)?'fb':/BytedanceWebview|musical_ly|TikTok|trill/i.test(navigator.userAgent)?'tiktok':'';o.t=new Date().toISOString();localStorage.setItem('adm_src',JSON.stringify(o))}catch(e){}})();</script>
 <script>
 /* Sortir du navigateur intégré Facebook / Instagram / TikTok */
 (function(){try{
@@ -432,6 +433,7 @@ function gate(mode,msg){
       }
       const{error}=await sb.auth.signInWithPassword({email:phoneEmail(ph),password:pw});
       if(error)throw new Error(/Invalid/i.test(error.message)?'الرقم ولا الكود ماشي صحيح.':/banned/i.test(error.message)?'الحساب موقوف. كلّمنا.':'ما خدمش. تحقق من الأنترنت وعاود.');
+      if(su)try{const _s=localStorage.getItem('adm_src');await sb.rpc('set_src',{s:_s?JSON.parse(_s):{direct:1}})}catch(e){}
     }catch(x){er.textContent=x.message;btn.disabled=false;btn.textContent=su?'🎁 ابدا التجربة باطل':'دخول'}
   };
 }

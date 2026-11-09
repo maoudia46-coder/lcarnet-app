@@ -1,3 +1,4 @@
+/* Source d'inscription (1re visite) */(function(){try{if(localStorage.getItem('adm_src'))return;var q=new URLSearchParams(location.search),o={},k=['utm_source','utm_medium','utm_campaign','utm_term','utm_content','ad_id','placement'];k.forEach(function(x){var v=q.get(x);if(v)o[x]=v.slice(0,120)});if(q.get('fbclid'))o.fbclid=1;if(q.get('ttclid'))o.ttclid=1;var r=document.referrer;if(r&&r.indexOf(location.host)<0)o.ref=r.slice(0,120);o.ua=/FBAN|FBAV|FB_IAB|Instagram/i.test(navigator.userAgent)?'fb':/BytedanceWebview|musical_ly|TikTok|trill/i.test(navigator.userAgent)?'tiktok':'';o.t=new Date().toISOString();localStorage.setItem('adm_src',JSON.stringify(o))}catch(e){}})();
 /* ADM Auto — extensions : contrat imprimable (PDF / impression), champs supplémentaires */
 (function(){
 document.title='ADM Auto — كراء السيارات';
@@ -409,7 +410,7 @@ gate.addEventListener('submit',async e=>{e.preventDefault();const mode=e.target.
     const r=await fetch(SB_URL+'/functions/v1/signup',{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY,Authorization:'Bearer '+SB_KEY},body:JSON.stringify({email:em,password:p1,agency:ag})});
     const d=await r.json().catch(()=>({}));
     if(!r.ok){showGate('signup',d.error==='banned'?'لا يمكن إنشاء حساب بهذا البريد.':d.error==='exists'?'هذا البريد مسجّل من قبل. اضغط «تسجيل الدخول».':ERR(d.error));return keep()}
-    const{error}=await sb.auth.signInWithPassword({email:em,password:p1});if(error)showGate('login',ERR(error.message))}
+    const{error}=await sb.auth.signInWithPassword({email:em,password:p1});if(error)showGate('login',ERR(error.message));else try{const _s=localStorage.getItem('adm_src');await sb.rpc('set_src',{s:_s?JSON.parse(_s):{direct:1}})}catch(e){}}
   else if(mode==='forgot'){const em=gv('g_mail');if(!em)return showGate('forgot','اكتب البريد الإلكتروني.');
     busy(true);const{error}=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});
     showGate('login',error?ERR(error.message):'📩 أرسلنا لك رسالة. افتح بريدك الإلكتروني (وتحقق من «Spam») واضغط على الرابط.',!error)}
