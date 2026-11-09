@@ -108,14 +108,37 @@ async function show(mode){
 }
 function draw(){
   const nDue=new Set(D.sp.filter(r=>r.debut>=addDays(today(),-365)&&(+r.prix||0)>(+r.montant_paye||0)).map(r=>ck(r.client))).size;
-  const tabs=MODE==='sp'?[['sdash','Tableau de bord'],['sponsos','Sponsos'],['clients','Clients'],['imp','Impayés'+(nDue?' ('+nDue+')':'')]]:[['bord','Vue d’ensemble'],['enc','Encaissements'],['abos','Abonnements'],['pub','Pub (auto)'],['reg','Réglages']];
+  const tabs=MODE==='sp'?[['sdash','Tableau de bord'],['sponsos','Sponsos'],['clients','Clients'],['imp','Impayés'+(nDue?' ('+nDue+')':'')]]:[['bord','Vue d’ensemble'],['soft','💻 Logiciels'],['enc','Encaissements'],['abos','Abonnements'],['pub','Pub (auto)'],['reg','Réglages']];
   if(!tabs.some(t=>t[0]===TAB))TAB=tabs[0][0];
   app.innerHTML=`<div class="fhead"><h1>${MODE==='sp'?'📣 ADM Sponsoring':'💰 Finances ADM Digital'}</h1><select id="fper">${periods()}</select>${MODE==='sp'?'<button class="btn p" id="fadd2">+ Nouveau sponso</button>':''}<button class="btn" id="frl">↻</button></div>
   <nav class="ftabs">${tabs.map(([k,l])=>`<button data-t="${k}" aria-selected="${TAB===k}">${l}</button>`).join('')}</nav><div id="fv"></div>`;
   $('#fper').onchange=e=>{PER=e.target.value;draw()};$('#frl').onclick=async()=>{D=null;await show();toast('Données à jour')};
   app.querySelectorAll('.ftabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;if(MODE==='sp')TABS=TAB;else TABF=TAB;draw()});
   if($('#fadd2'))$('#fadd2').onclick=()=>spForm(null);
-  ({bord,sdash,sponsos,clients,imp,enc,abos,pub,reg})[TAB]();
+  ({bord,soft,sdash,sponsos,clients,imp,enc,abos,pub,reg})[TAB]();
+}
+/* ---------- Logiciels uniquement (sans sponsoring) ---------- */
+function soft(){
+  const ks=keysOf('logiciels'),rt=D.rate.USD,T={m:0,t:0,rev:0,subs:0},rows=[],camps={};
+  ks.forEach(k=>{const o={k,m:0,t:0,rev:0,subs:0,n:0};
+    D.spend.forEach(r=>{if(r.business!==k||!inP(r.day))return;const v=+r.spend_usd||0;if(r.platform==='tiktok')o.t+=v;else o.m+=v;
+      const c=camps[r.platform+'|'+r.campaign_id]||(camps[r.platform+'|'+r.campaign_id]={k,p:r.platform,name:r.campaign_name||r.campaign_id,usd:0});c.usd+=v});
+    D.inc.forEach(r=>{if(r.business===k&&inP(r.day)){o.rev+=toDA(r.amount,r.currency);o.n++}});
+    o.subs=D.subs.filter(s=>s.business===k).reduce((a,s)=>a+months().reduce((b,m)=>b+subMonth(s,m),0),0);
+    ['m','t','rev','subs'].forEach(f=>T[f]+=o[f]);rows.push(o)});
+  const net=o=>o.rev-(o.m+o.t)*rt-o.subs;
+  const line=o=>`<tr><td><b>${BIZ[o.k].i} ${BIZ[o.k].n}</b></td><td class="r">${usd(o.m)}</td><td class="r">${usd(o.t)}</td><td class="r"><b>${usd(o.m+o.t)}</b><div class="mini">${da((o.m+o.t)*rt)}</div></td><td class="r">${o.subs?da(o.subs):'—'}</td><td class="r"><b>${da(o.rev)}</b>${o.n?`<div class="mini">${o.n} paiement${o.n>1?'s':''}</div>`:''}</td><td class="r">${sg(net(o))}</td></tr>`;
+  const cl=Object.values(camps).sort((a,b)=>b.usd-a.usd);
+  $('#fv').innerHTML=`<div class="big b3">
+   <div class="bk"><span>Dépensé en pub</span><b>${usd(T.m+T.t)}</b><div class="mini">Meta ${usd(T.m)} · TikTok ${usd(T.t)} · ${da((T.m+T.t)*rt)}</div></div>
+   <div class="bk"><span>Encaissé</span><b style="color:var(--ok,#0E9F6E)">${da(T.rev)}</b><div class="mini">abonnements payés par les clients</div></div>
+   <div class="bk hero"><span>Résultat logiciels</span>${sg(net(T))}<div class="mini" style="color:#9db8e8">encaissé − pub${T.subs?' − abonnements':''} · 1 $ = ${rt} DA</div></div></div>
+  <div class="tw" style="margin-top:16px"><table><thead><tr><th>Logiciel</th><th class="r">Pub Meta</th><th class="r">Pub TikTok</th><th class="r">Total pub</th><th class="r">Abonnements</th><th class="r">Encaissé</th><th class="r">Résultat</th></tr></thead><tbody>
+   ${rows.map(line).join('')}<tr style="background:#EEF3FF"><td><b>Total logiciels</b></td><td class="r"><b>${usd(T.m)}</b></td><td class="r"><b>${usd(T.t)}</b></td><td class="r"><b>${usd(T.m+T.t)}</b><div class="mini">${da((T.m+T.t)*rt)}</div></td><td class="r">${T.subs?da(T.subs):'—'}</td><td class="r"><b>${da(T.rev)}</b></td><td class="r">${sg(net(T))}</td></tr></tbody></table></div>
+  <h3 style="margin:20px 0 8px">Détail des campagnes pub (logiciels)</h3>
+  <div class="tw"><table><thead><tr><th>Campagne</th><th>Logiciel</th><th>Plateforme</th><th class="r">Dépensé</th></tr></thead><tbody>
+   ${cl.length?cl.map(c=>`<tr><td>${esc(c.name)}</td><td>${BIZ[c.k].n}</td><td>${c.p==='tiktok'?'TikTok':'Meta'}</td><td class="r">${usd(c.usd)}</td></tr>`).join(''):'<tr><td colspan="4" class="mini">Aucune dépense pub sur cette période.</td></tr>'}</tbody></table></div>
+  <p class="mini" style="margin-top:10px">Le sponsoring (clients et pub ADM Digital) n’est pas compté ici : il a son espace 📣 Sponsoring.</p>`;
 }
 function bord(){
   const R=calc(),all=sumG(R,Object.keys(BIZ));

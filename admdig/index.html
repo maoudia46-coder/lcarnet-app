@@ -199,4 +199,4 @@ $('#bOut').onclick=async()=>{await sb.auth.signOut();loginView('Tu es déconnect
 async function boot(){const{data}=await sb.auth.getSession();if(data.session)home();else loginView()}
 boot();setInterval(()=>{const a=document.activeElement;if(VIEW==='list'&&!document.querySelector('.modal-bg')&&document.visibilityState==='visible'&&$('#q')&&!(a&&a.tagName==='INPUT'))load()},60000);
 </script>
-<script src="/fin.js?v=2"></script></body></html>
+<script src="/fin.js?v=3"></script></body></html>
