@@ -65,6 +65,7 @@ const SB_URL='https://bkpjgxsbkveyxeacktev.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrcGpneHNia3ZleXhlYWNrdGV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4MTM5MTIsImV4cCI6MjEwOTM4OTkxMn0.0DeKYxtpUp8BaInXpJ5GrGEcTMjHBYXz1SgvZThrvRc';
 const sb=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'lp-admin-auth'}});
 const $=s=>document.querySelector(s),app=$('#app');
+function telOf(a){if(a.phone)return a.phone;const m=/^213(\d{9})@tel\.admauto$/.exec(a.email||'');return m?'0'+m[1]:''}
 function srcL(s){if(!s)return'';if(typeof s==='string')try{s=JSON.parse(s)}catch(e){return''}if(s.direct)return'🔗 Direct / organique';const so=(s.utm_source||'').toLowerCase(),u=s.ua||'';let p=/tiktok/.test(so)?'TikTok':/fb|facebook|ig|insta|meta/.test(so)?'Facebook/Instagram':so?s.utm_source:u==='tiktok'?'TikTok':u==='fb'?'Facebook/Instagram':s.ref?s.ref.replace(/^https?:\/\//,'').split('/')[0]:'Direct';const pub=!!(s.utm_campaign||s.fbclid||s.ttclid);const d=[s.utm_campaign,s.utm_content].filter(Boolean).map(x=>esc(decodeURIComponent(String(x).replace(/\+/g,' ')))).join(' · ');return(pub?'📣 Pub ':'🌱 ')+esc(p)+(pub?'':' (organique)')+(d?' — '+d:'')}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let tt;const toast=t=>{const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>e.hidden=true,3000)};
@@ -123,7 +124,7 @@ async function load(){VIEW='list';$('#crumb').textContent=P.name;$('#bBack').hid
 function render(){
   const c={all:ROWS.length,active:0,trial:0,expired:0,suspended:0,banned:0};ROWS.forEach(a=>c[state(a)]++);
   const nw=ROWS.filter(a=>Date.now()-new Date(a.created_at)<7*864e5).length;
-  const list=ROWS.filter(a=>(F==='all'||state(a)===F)&&(!Q||[a.agency_name,a.email,a.phone,a.note].join(' ').toLowerCase().includes(Q)));
+  const list=ROWS.filter(a=>(F==='all'||state(a)===F)&&(!Q||[a.agency_name,a.email,a.phone,telOf(a),a.note].join(' ').toLowerCase().includes(Q)));
   const K=(k,l)=>`<button class="kpi" data-f="${k}" aria-pressed="${F===k}"><b>${c[k]}</b><span>${l}</span></button>`;
   app.innerHTML=`<h1>${P.icon} ${esc(P.name)} — inscrits</h1><p class="lead">${ROWS.length} ${ROWS.length>1?P.unit[1]:P.unit[0]} · ${nw} cette semaine · <a href="${P.url}" target="_blank" rel="noopener">${P.url.replace('https://','')}</a></p>
   <div class="kpis">${K('all','Tous')}${K('active','Abonnés')}${K('trial','En essai')}${K('expired','Expirés')}${K('suspended','Suspendus')}${K('banned','Bannis')}</div>
@@ -136,7 +137,7 @@ function render(){
 }
 function row(a){const s=state(a);const dl=a.expires_at?days(a.expires_at):null;const exp=a.expires_at?(s==='expired'?`terminé le <b>${fd(a.expires_at)}</b>`:`jusqu'au <b>${fd(a.expires_at)}</b> (${dl} j)${a.plan==='paid'&&dl<=30?' <b style="color:var(--warn)">⚠ à renouveler</b>':''}`):'<b>illimité</b>';
   return `<div class="acc st-${s}">
-   <div><div class="nm ar" dir="auto">${esc(a.agency_name||'(sans nom)')}</div><div class="em">${P.login==='phone'?`📞 ${esc(a.phone||'')}${a.push?' · 🔔 notifs OK':' · 🔕 notifs off'}`:esc(a.email)+(a.phone?' · '+esc(a.phone):'')}</div>${a.note?`<div class="note">📝 ${esc(a.note)}</div>`:''}${a.dup?`<div class="note" style="background:var(--bad-s);color:var(--bad);font-weight:600">⚠ Possible doublon avec : ${esc(a.dup)}</div>`:''}</div>
+   <div><div class="nm ar" dir="auto">${esc(a.agency_name||'(sans nom)')}</div><div class="em">${P.login==='phone'?`📞 ${esc(a.phone||'')}${a.push?' · 🔔 notifs OK':' · 🔕 notifs off'}`:telOf(a)&&/@tel\.admauto$/.test(a.email||'')?`📞 ${esc(telOf(a))}`:esc(a.email)+(a.phone?' · '+esc(a.phone):'')}</div>${a.note?`<div class="note">📝 ${esc(a.note)}</div>`:''}${a.dup?`<div class="note" style="background:var(--bad-s);color:var(--bad);font-weight:600">⚠ Possible doublon avec : ${esc(a.dup)}</div>`:''}</div>
    <div class="meta"><span class="pill ${s}">● ${lab(a)}</span><br>Accès : ${exp}<br>Inscrit le <b>${fd(a.created_at)}</b>${a.src?`<br>Source : <b>${srcL(a.src)}</b>`:''}</div>
    <div class="meta">${P.id==='carnet'?`👤 <b>${a.customers||0}</b> clients · 📒 <b>${a.txs||0}</b> opérations<br>💰 Crédit en cours : <b>${Math.round(a.due||0).toLocaleString('fr-FR')} DA</b> · ${a.first_tx?'1er crédit le <b>'+fd(a.first_tx)+'</b>':'<b style="color:var(--warn)">⚠ aucun crédit saisi</b>'}<br>`:`🚗 <b>${a.cars||0}</b> voitures · 👤 <b>${a.clients||0}</b> clients<br>📄 <b>${a.contracts||0}</b> contrats (${a.active_contracts||0} en cours)<br>`}Dernière activité : <b>${ago(a.last_data&&a.last_data>a.created_at?a.last_data:a.last_sign_in)}</b>${a.members?`<br>👥 <b>${a.members}</b> associé${a.members>1?'s':''} : ${esc(a.member_names)}`:''}</div>
    <div class="acts">
@@ -176,8 +177,8 @@ function act(a,id){const r=ROWS.find(x=>x.user_id===id);const nm=esc(r.agency_na
     const np=m.querySelector('#np');m.querySelector('#rg').onclick=()=>np.value=gen();
     m.querySelector('#sv').onclick=async()=>{const pw=np.value.trim();if(pw.length<6)return toast('6 caractères minimum');const b=m.querySelector('#sv');b.disabled=true;
       try{await api('set_password',{user_id:id,password:pw});
-        const msg=P.login==='phone'?`الكارني — معلومات الدخول الجديدة:\nالرابط: ${P.url}\nالرقم: ${r.phone||''}\nالكود السري: ${pw}`:`${P.name} — معلومات الدخول الجديدة:\nالرابط: ${P.url}\nالبريد: ${r.email}\nكلمة المرور: ${pw}`;
-        const wa=(r.phone||'').replace(/\D/g,'').replace(/^0/,'213');
+        const msg=/@tel\.admauto$/.test(r.email||'')?`${P.name} — معلومات الدخول الجديدة:\nالرابط: ${P.url}\nالرقم: ${telOf(r)}\nالكود السري: ${pw}`:P.login==='phone'?`الكارني — معلومات الدخول الجديدة:\nالرابط: ${P.url}\nالرقم: ${r.phone||''}\nالكود السري: ${pw}`:`${P.name} — معلومات الدخول الجديدة:\nالرابط: ${P.url}\nالبريد: ${r.email}\nكلمة المرور: ${pw}`;
+        const wa=(telOf(r)||'').replace(/\D/g,'').replace(/^0/,'213');
         b.remove();np.readOnly=true;m.querySelector('#rg').remove();
         m.querySelector('#ok2').innerHTML=`<div class="okm">✔ Mot de passe enregistré. Envoie-le au client :</div><div class="row" style="justify-content:flex-start"><button class="btn" id="cp">📋 Copier le message</button>${wa?`<a class="btn ok" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}" style="text-decoration:none">💬 Envoyer sur WhatsApp</a>`:''}</div>`;
         m.querySelector('#cp').onclick=()=>{navigator.clipboard.writeText(msg).then(()=>toast('Message copié'),()=>toast('Copie impossible'))}}
