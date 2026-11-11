@@ -129,7 +129,7 @@ document.body.appendChild(d)}
 if(document.body)bar();else document.addEventListener('DOMContentLoaded',bar);
 }catch(e){}})();
 </script>
-<script src="lang.js?v=3"></script>
+<script src="lang.js?v=4"></script>
 <div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -226,7 +226,7 @@ function render(){
   let h=topbar(shop,'كناش الكريدي');
   h+=`<div class="wrap">${trialBanner()}`;
   if(!custs.length){
-    h+=`<div class="card empty"><div class="big">📒</div><h2>سجّل الكريدي تاع أول زبون</h2><p>زر واحد برك. ما تحتاج حتى حاجة أخرى.</p><button class="btn g" data-w onclick="K.newCust()">➕ زبون جديد + الكريدي تاعو</button></div>
+    h+=`<div class="card empty"><div class="big">📒</div><h2>سجّل الكريدي تاع أول زبون</h2><p>زر واحد برك. ما تحتاج حتى حاجة أخرى.</p><button class="btn g" data-w onclick="K.newCust()">➕ زبون ولا فورنيسور جديد</button></div>
     <div class="safe">
       <div><i>☁</i><span><b>محفوظ أوتوماتيك</b>كل حاجة تكتبها تتسجّل وحدها. حتى لو ضاع التيليفون، تدخل من تيليفون آخر وتلقى كلش.</span></div>
       <div><i>📴</i><span><b>يخدم بلا أنترنت</b>الكريدي يبان ديما، حتى بلا أنترنت. وكي ترجع الأنترنت يتسجّل وحدو.</span></div>
@@ -239,7 +239,7 @@ function render(){
     <input class="search" type="search" placeholder="🔎 ابحث على زبون…" value="${esc(Q)}" oninput="K.q(this.value)">
     <div id="cl">${list.map(c=>`<button class="cl" onclick="K.open('${c.id}')"><div class="av">${esc((c.n||'?').trim().charAt(0))}</div><div><div class="n">${esc(c.n)}${isF(c)?'<span class="tag">فورنيسور</span>':''}</div><div class="s">${c.l?'آخر حركة '+dstr(c.l).slice(0,10):'ما كاين حتى حركة'}</div></div><div class="m ${c.b>0?(isF(c)?'owe':'due'):c.b<0?'ok':'zero'}">${c.b===0?'خالص ✓':da(Math.abs(c.b))}${isF(c)&&c.b>0?'<div class="s">نسالو</div>':''}${c.b<0?(isF(c)?'<div class="s">خلّصت زايد</div>':'<div class="s">عندو عندك</div>'):''}</div></button>`).join('')||'<p class="hint" style="text-align:center">ما لقينا حتى زبون بهذا الاسم.</p>'}</div>`;
   }
-  h+=`</div>${custs.length?`<button class="fab" onclick="K.newCust()">➕ زبون جديد</button>`:''}`;
+  h+=`</div>${custs.length?`<button class="fab" onclick="K.newCust()">➕ زبون ولا فورنيسور</button>`:''}`;
   app.innerHTML=h;pill();
   const s=$('.search');if(s&&document.activeElement!==s&&Q){s.focus();s.setSelectionRange(Q.length,Q.length)}
 }
@@ -268,14 +268,14 @@ function amountSheet(title,sub,color,cb,withName){
   <div class="amt num" id="am" style="color:${color}">0 دج</div>
   <div class="quick">${[100,200,500,1000,2000].map(x=>`<button data-q="${x}">+${x}</button>`).join('')}</div>
   <div class="pad">${['1','2','3','4','5','6','7','8','9','00','0','⌫'].map(k=>`<button class="${k==='⌫'?'x':''}" data-k="${k}">${k}</button>`).join('')}</div>
-  <label>ملاحظة (ماشي لازم)</label><input class="inp" id="nt" placeholder="مثلا: خبز وحليب" autocomplete="off">
+  <label>ملاحظة (ماشي لازم)</label><input class="inp" id="nt" placeholder="مثلا: سلعة ولا خدمة" autocomplete="off">
   <div class="err" id="er"></div>
   <button class="btn g" id="ok" style="background:${color};margin-top:6px">✔ سجّل</button>`);
   const show=()=>{s.querySelector('#am').textContent=(v?fmt(+v):'0')+' دج'};
   s.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(k==='⌫')v=v.slice(0,-1);else if(v.length<8)v=(v+k).replace(/^0+/,'');show()});
   s.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{v=String((+v||0)+(+b.dataset.q));show()});
   s.querySelector('#ok').onclick=()=>{const r=cb(+v||0,s.querySelector('#nt').value.trim(),s);if(r){s.querySelector('#er').textContent=r}else closeSheet()};
-  if(withName){s.kd='c';s.querySelectorAll('[data-kd]').forEach(b=>b.onclick=()=>{s.kd=b.dataset.kd;const F=s.kd==='f';s.querySelectorAll('[data-kd]').forEach(x=>x.classList.toggle('on',x===b));s.querySelector('#st').textContent=F?'➕ فورنيسور جديد':title;s.querySelector('#nml').textContent=F?'اسم الفورنيسور':'اسم الزبون';s.querySelector('#nm').placeholder=F?'مثلا: موزّع الحليب':'مثلا: عمي رابح';s.querySelector('#aml').textContent=F?'شحال نسالو؟ (إذا ما نسالو والو خلّيها 0)':'شحال الكريدي؟ (إذا ما عليه والو خلّيها 0)';s.querySelector('#am').style.color=F?'#B86E00':color;s.querySelector('#ok').style.background=F?'#B86E00':color});setTimeout(()=>s.querySelector('#nm').focus(),150)}
+  if(withName){s.kd='c';s.querySelectorAll('[data-kd]').forEach(b=>b.onclick=()=>{s.kd=b.dataset.kd;const F=s.kd==='f';s.querySelectorAll('[data-kd]').forEach(x=>x.classList.toggle('on',x===b));s.querySelector('#st').textContent=F?'➕ فورنيسور جديد':'➕ زبون جديد';s.querySelector('#nml').textContent=F?'اسم الفورنيسور':'اسم الزبون';s.querySelector('#nm').placeholder=F?'مثلا: موزّع الحليب':'مثلا: عمي رابح';s.querySelector('#aml').textContent=F?'شحال نسالو؟ (إذا ما نسالو والو خلّيها 0)':'شحال الكريدي؟ (إذا ما عليه والو خلّيها 0)';s.querySelector('#am').style.color=F?'#B86E00':color;s.querySelector('#ok').style.background=F?'#B86E00':color});setTimeout(()=>s.querySelector('#nm').focus(),150)}
   return s;
 }
 
@@ -285,7 +285,7 @@ const K=window.K={
   open(id){Q='';go({r:'cust',id})},
   filt(f){FILT=f;render()},
   newCust(){if(!guard())return;
-    amountSheet('➕ زبون جديد','اكتب الاسم والكريدي تاعو. هذا كلش.','#C4362C',(a,n,s)=>{
+    amountSheet('➕ زبون ولا فورنيسور جديد','اكتب الاسم والكريدي تاعو. هذا كلش.','#C4362C',(a,n,s)=>{
       const F=s.kd==='f';const name=s.querySelector('#nm').value.trim();if(!name)return F?'اكتب اسم الفورنيسور.':'اكتب اسم الزبون.';
       const ph=normPhone(s.querySelector('#ph').value);
       if(alive(D.customers).some(c=>c.n.trim()===name)&&!confirm('كاين زبون بنفس الاسم. نزيدو واحد آخر؟'))return 'بدّل الاسم شوية (مثلا زيد اللقب).';
