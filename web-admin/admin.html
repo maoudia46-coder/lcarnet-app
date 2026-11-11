@@ -19,7 +19,7 @@ header .wrap{display:flex;align-items:center;gap:12px;height:62px}
 .btn:hover{border-color:#c9d0d7}.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}.btn.d{color:var(--bad);border-color:#efc5c1}.btn.d.f{background:var(--bad);color:#fff;border-color:var(--bad)}.btn.ok{color:var(--ok);border-color:#bfe0cd}.btn.sm{padding:5px 10px;font-size:13px}
 .btn:disabled{opacity:.5;cursor:default}
 h1{font-size:24px;margin:22px 0 4px}.lead{color:var(--muted);margin:0 0 18px}
-.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:18px}
+.kpis{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin-bottom:18px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left}
 .kpi b{display:block;font-size:26px;font-weight:800}.kpi span{color:var(--muted);font-size:13px;font-weight:600}
 .kpi[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 2px var(--soft)}
@@ -122,12 +122,13 @@ async function load(){VIEW='list';$('#crumb').textContent=P.name;$('#bBack').hid
   try{const d=await api('list');ROWS=d.rows;$('#bSet').hidden=$('#bOut').hidden=false;render()}
   catch(e){if(/forbidden/.test(e.message)&&P.id==='auto'){await sb.auth.signOut();loginView('Ce compte n\'a pas les droits administrateur.')}else app.innerHTML=`<div class="err" style="margin:30px 0">Erreur : ${esc(e.message)} <button class="btn sm" onclick="load()">Réessayer</button></div>`}}
 function render(){
-  const c={all:ROWS.length,active:0,trial:0,expired:0,suspended:0,banned:0};ROWS.forEach(a=>c[state(a)]++);
+  const isUsed=a=>P.id==='carnet'?(a.customers||0)>0:((a.cars||0)+(a.clients||0)+(a.contracts||0))>0;
+  const c={all:ROWS.length,used:ROWS.filter(isUsed).length,active:0,trial:0,expired:0,suspended:0,banned:0};ROWS.forEach(a=>c[state(a)]++);
   const nw=ROWS.filter(a=>Date.now()-new Date(a.created_at)<7*864e5).length;
-  const list=ROWS.filter(a=>(F==='all'||state(a)===F)&&(!Q||[a.agency_name,a.email,a.phone,telOf(a),a.note].join(' ').toLowerCase().includes(Q)));
+  const list=ROWS.filter(a=>(F==='all'||(F==='used'?isUsed(a):state(a)===F))&&(!Q||[a.agency_name,a.email,a.phone,telOf(a),a.note].join(' ').toLowerCase().includes(Q)));
   const K=(k,l)=>`<button class="kpi" data-f="${k}" aria-pressed="${F===k}"><b>${c[k]}</b><span>${l}</span></button>`;
   app.innerHTML=`<h1>${P.icon} ${esc(P.name)} — inscrits</h1><p class="lead">${ROWS.length} ${ROWS.length>1?P.unit[1]:P.unit[0]} · ${nw} cette semaine · <a href="${P.url}" target="_blank" rel="noopener">${P.url.replace('https://','')}</a></p>
-  <div class="kpis">${K('all','Tous')}${K('active','Abonnés')}${K('trial','En essai')}${K('expired','Expirés')}${K('suspended','Suspendus')}${K('banned','Bannis')}</div>
+  <div class="kpis">${K('all','Tous')}${K('used','Actifs')}${K('active','Abonnés')}${K('trial','En essai')}${K('expired','Expirés')}${K('suspended','Suspendus')}${K('banned','Bannis')}</div>
   <div class="bar"><input id="q" placeholder="Rechercher : nom, email, téléphone, note…" value="${esc(Q)}"><button class="btn" id="rf">↻ Actualiser</button></div>
   <div class="list">${list.length?list.map(row).join(''):`<div class="empty">${ROWS.length?'Aucun compte dans ce filtre.':`Aucun inscrit pour l\'instant. Dès qu\'un client crée son compte sur ${P.url.replace('https://','')}, il apparaît ici.`}</div>`}</div>`;
   app.querySelectorAll('.kpi').forEach(b=>b.onclick=()=>{F=b.dataset.f;render()});
