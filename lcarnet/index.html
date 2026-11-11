@@ -393,6 +393,17 @@ async function welcomeSheet(){
   s.querySelector('#wlok').onclick=next;s.querySelector('#wlwa').addEventListener('click',()=>setTimeout(next,1500));
   s.onclick=e=>{if(e.target===s)next()};
 }
+function motivSheet(){
+  const d=daysLeft();
+  const s=sheet(`<div class="wl"><div class="wl-top"><div class="wl-ic">🤝</div><h3>جرّب، ما راك خاسر والو</h3>${d!==null&&d>0&&ACC&&ACC.plan!=='paid'?`<span class="wl-badge">باقي لك <bdi class="num">${d}</bdi> ${d>10?'يوم':'أيام'} باطل</span>`:''}</div>
+  <div class="wl-li"><i>⏱</i><span><b>دقيقة وحدة برك</b>سجّل زبون واحد والمبلغ تاعو، وشوف بعينك كيفاش يخدم.</span></div>
+  <div class="wl-li"><i>💡</i><span><b>يمكن يعاونك صح</b>شكون تسالو وشكون يسالك، كلش قدامك، وما يفلتلك حتى دورو.</span></div>
+  <div class="wl-li"><i>✅</i><span><b>أعطي فرصة للكارني</b>ما تخسر والو، وما تندمش.</span></div>
+  <button class="btn g" id="mvgo" style="margin-top:12px">نجرّب دك</button>
+  <button class="btn l" id="mvno" style="margin-top:8px">من بعد</button></div>`);
+  s.querySelector('#mvgo').onclick=()=>{closeSheet();if(canWrite())K.newCust()};
+  s.querySelector('#mvno').onclick=()=>closeSheet();
+}
 async function notifAsk(force){
   closeSheet();
   if(!('Notification'in window)){if(window.KR_INAPP&&/Android/i.test(navigator.userAgent)){escSheet();return}if(force)toast('التيليفون هذا ما يقبلش التنبيهات');return}
@@ -474,6 +485,7 @@ async function enter(user){
   else if('Notification'in window&&Notification.permission==='default'){let lt=0;try{lt=+localStorage.getItem('kr-na')||0;if(Date.now()-lt>864e5)localStorage.setItem('kr-na',String(Date.now()))}catch(e){}if(Date.now()-lt>864e5)setTimeout(()=>notifAsk(false),2500)}
   else if(window.KR_INAPP&&/Android/i.test(navigator.userAgent)){let sh=false;try{sh=sessionStorage.getItem('kr-esc2')==='1';sessionStorage.setItem('kr-esc2','1')}catch(e){}if(!sh)setTimeout(escSheet,1500)}
   try{let f=+localStorage.getItem('kr-first')||0;if(!f)localStorage.setItem('kr-first',String(Date.now()));else{const dd=(Date.now()-f)/864e5,R=[1,4,9],dn=(localStorage.getItem('kr-rem')||'').split(',');let due=null;R.forEach(x=>{if(dd>=x&&dn.indexOf(String(x))<0)due=x});if(due!==null)setTimeout(()=>{if(document.querySelector('.sheet'))return;R.forEach(x=>{if(x<=due&&dn.indexOf(String(x))<0)dn.push(String(x))});localStorage.setItem('kr-rem',dn.filter(Boolean).join(','));K.contact(true)},45000)}}catch(e){}
+  try{const f0=+localStorage.getItem('kr-first')||Date.now(),lm=+localStorage.getItem('kr-mot')||0;if(!IS_MEMBER&&canWrite()&&!alive(D.tx).length&&Date.now()-f0>18e5&&Date.now()-lm>864e5&&location.hash!=='#new')setTimeout(()=>{if(document.querySelector('.sheet')||alive(D.tx).length)return;localStorage.setItem('kr-mot',String(Date.now()));motivSheet()},4000)}catch(e){}
   if(location.hash==='#new'&&canWrite()){history.replaceState(ROUTE,'',location.pathname);K.newCust()}
 }
 
