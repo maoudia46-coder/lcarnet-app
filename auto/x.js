@@ -423,6 +423,57 @@ gate.addEventListener('submit',async e=>{e.preventDefault();const mode=e.target.
   }catch(err){busy(false);showGate(mode==='signup'?'signup':mode==='recovery'?'recovery':'login',ERR(err.message))}
 });
 
+/* ADM Digital — rubrique « فعّل حسابك » (commune L'Carnet / ADM Auto) */
+window.ADMAbo=function(o){
+  var old=document.getElementById('admabo');if(old)old.remove();
+  if(!document.getElementById('admabo-css')){var st=document.createElement('style');st.id='admabo-css';st.textContent=
+  '#admabo{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;direction:rtl;font-family:inherit}'+
+  '#admabo .in{background:#fff;color:#16211B;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom));text-align:right}'+
+  '#admabo .tp{text-align:center;background:linear-gradient(135deg,#0F6E4F,#1DA851);color:#fff;border-radius:18px;padding:16px 12px}'+
+  '#admabo .tp h3{font-size:22px;margin:2px 0 6px;color:#fff}#admabo .pr{display:inline-block;background:#fff;color:#0F6E4F;font-weight:900;border-radius:99px;padding:4px 16px;font-size:20px}'+
+  '#admabo .sb{font-size:13px;opacity:.92;margin-top:6px}#admabo h4{font-size:16px;margin:14px 2px 6px}'+
+  '#admabo .li{display:flex;gap:10px;align-items:flex-start;background:#F0F7F3;border-radius:12px;padding:9px 11px;margin:6px 0;font-size:14px;line-height:1.5}#admabo .li i{font-style:normal;font-size:18px}#admabo .li b{display:block;font-size:14.5px}'+
+  '#admabo .qt{background:#FFF8E6;border-right:4px solid #E8A400;border-radius:10px;padding:9px 12px;font-size:14px;margin:10px 0}#admabo .qt small{display:block;color:#7a6a3a;margin-top:3px}'+
+  '#admabo .py{border:2px solid #DCE3DE;border-radius:14px;padding:10px 12px;margin:8px 0}#admabo .py .t{font-weight:800;font-size:15px;display:flex;justify-content:space-between;align-items:center}'+
+  '#admabo .nm{direction:ltr;unicode-bidi:isolate;font-family:monospace;font-size:17px;font-weight:700;letter-spacing:.5px;display:block;text-align:left;margin:4px 0;user-select:all}'+
+  '#admabo .cp{background:#0F6E4F;color:#fff;border:0;border-radius:8px;padding:4px 12px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}'+
+  '#admabo .ow{font-size:13px;color:#5C6B62}#admabo .stp{font-size:14px;line-height:1.8;background:#F7F8F7;border-radius:12px;padding:8px 12px}'+
+  '#admabo .bt{display:block;width:100%;text-align:center;border-radius:12px;padding:11px;font-weight:800;font-size:16px;margin-top:8px;color:#fff;text-decoration:none;border:0;font-family:inherit;cursor:pointer}'+
+  '#admabo .wa{background:#1DA851}#admabo .fb{background:#1877F2}#admabo .ig{background:linear-gradient(90deg,#F58529,#DD2A7B,#8134AF)}#admabo .lt{background:#EEF1EF;color:#16211B}'+
+  '#admabo .nt{font-size:13.5px;color:#5C6B62;text-align:center;margin-top:12px;line-height:1.6}';
+  document.head.appendChild(st)}
+  var wa=String(o.wa||'0550240283').replace(/\D/g,'');wa='213'+wa.replace(/^213/,'').replace(/^0/,'');
+  var who=o.who?' ('+o.who+')':'';
+  var mRec=encodeURIComponent('السلام عليكم، خلّصت الاشتراك تاع '+o.app+who+'. هذا le reçu:');
+  var mAsk=encodeURIComponent('السلام عليكم، عندي سؤال على الاشتراك تاع '+o.app+who+'.');
+  var li=(o.benefits||[]).map(function(b){return '<div class="li"><i>'+b[0]+'</i><span><b>'+b[1]+'</b>'+b[2]+'</span></div>'}).join('');
+  var d=document.createElement('div');d.id='admabo';
+  d.innerHTML='<div class="in"><div class="tp"><h3>فعّل حسابك</h3><span class="pr"><bdi dir="ltr">'+o.price+'</bdi> دج للعام</span><div class="sb">'+o.perDay+'</div></div>'+
+  '<h4>واش تربح مع '+o.app+'</h4>'+li+(o.quote?'<div class="qt">«'+o.quote+'»<small>— '+(o.quoteBy||'')+'</small></div>':'')+
+  '<h4>كيفاش تخلّص</h4>'+
+  '<div class="py"><div class="t">BaridiMob <button class="cp" data-c="00799999001965385979">نسخ</button></div><span class="nm">00799999001965385979</span><span class="ow">باسم: AOUDIA MOHAMED</span></div>'+
+  '<div class="py"><div class="t">CCP <button class="cp" data-c="0019653859">نسخ</button></div><span class="nm">0019653859 clé 79</span><span class="ow">باسم: AOUDIA MOHAMED</span></div>'+
+  '<div class="stp">1. خلّص <bdi dir="ltr">'+o.price+'</bdi> دج.<br>2. صوّر le reçu.<br>3. بعثو لنا مع رقم التيليفون تاعك، ونفعّلولك الحساب في أقرب وقت.</div>'+
+  '<a class="bt wa" target="_blank" rel="noopener" href="https://wa.me/'+wa+'?text='+mRec+'">بعث le reçu في واتساب</a>'+
+  '<a class="bt fb" target="_blank" rel="noopener" href="https://m.me/102198542397576">بعثو في الفيسبوك</a>'+
+  '<a class="bt ig" target="_blank" rel="noopener" href="https://ig.me/m/admdigital.dz">بعثو في الإنستغرام</a>'+
+  '<div class="nt">حاب تحكي معانا قبل ما تخلّص؟ ما كاين حتى مشكل، أكتبلنا ونجاوبوك على كل سؤال.</div>'+
+  '<a class="bt lt" target="_blank" rel="noopener" href="https://wa.me/'+wa+'?text='+mAsk+'">نحكي معاكم قبل</a>'+
+  '<button class="bt lt" data-x="1" style="margin-top:6px">رجوع</button></div>';
+  d.addEventListener('click',function(e){
+    if(e.target===d||e.target.closest('[data-x]')){d.remove();return}
+    var c=e.target.closest('.cp');if(c){var v=c.getAttribute('data-c');
+      var ok=function(){c.textContent='تنسخ ✓';setTimeout(function(){c.textContent='نسخ'},1500)};
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(v).then(ok,function(){prompt('',v)});else prompt('',v)}
+  });
+  document.body.appendChild(d);
+};
+
+window.openAbo=async function(){
+  let c=(typeof CONTACT!=='undefined'&&CONTACT)||null;if(!c||!c.whatsapp){try{const r=await sb.rpc('get_contact');c=r.data||{}}catch(e){c={}}}
+  const who=(ACC&&ACC.phone)||(typeof USER!=='undefined'&&USER&&USER.email)||'';
+  ADMAbo({app:'ADM Auto',who,wa:c.whatsapp,price:'12 000',perDay:'يعني حوالي 33 دج في النهار',
+   benefits:[['🚗','كل السيارات في بلاصة وحدة','الحالة تاع كل سيارة: متاحة، مكرية، ولا في الصيانة.'],['📝','العقود والحجوزات','تعمر العقد وتطبعو في دقيقة، وتشوف شكون يرجع اليوم.'],['🔔','تنبيهات كل صباح','السيارات المتأخرة، تبديل الزيت، التأمين، المراقبة التقنية.'],['👤','الزبائن','ملف كل زبون مع العقود تاعو، تلقاه في ثانية.'],['☁','محفوظ في الإنترنت','تدخل من التيليفون ولا الـ PC وتلقى كلش.']]})};
 /* compte bloqué / expiré */
 const accState=a=>!a?'ok':a.status==='banned'?'banned':(a.status==='suspended'||a.active===false)?'suspended':(a.expires_at&&new Date(a.expires_at)<new Date())?'expired':'ok';
 async function showBlocked(kind){inside=false;closeModal();gate.hidden=false;
@@ -430,6 +481,7 @@ async function showBlocked(kind){inside=false;closeModal();gate.hidden=false;
   const T={banned:['⛔','تم حظر هذا الحساب','لم يعد بإمكانك استعمال البرنامج بهذا الحساب.'],suspended:['🔒','حسابك موقوف مؤقتًا','تم إيقاف حسابك. معلوماتك محفوظة ولن تضيع. اتصل بنا لإعادة تفعيله.'],expired:ACC&&ACC.plan==='paid'?['⏰','انتهى اشتراكك السنوي','شكرًا لثقتك. معلوماتك محفوظة ولن تضيع. جدّد اشتراكك (<bdi dir="ltr">12 000</bdi> دج لعام كامل) وواصل العمل من حيث توقفت.']:['⏰','انتهت الفترة التجريبية','شكرًا لتجربتك للبرنامج. معلوماتك محفوظة. فعّل اشتراكك بـ <bdi dir="ltr">12 000</bdi> دج لعام كامل وواصل العمل بنفس المعلومات.']}[kind];
   const ph=(c.phone||'').trim(),wa=(c.whatsapp||'').replace(/\D/g,'');
   gate.innerHTML=`<div class="card">${LG}<div style="text-align:center;font-size:64px;line-height:1">${T[0]}</div><h2 style="text-align:center;margin-top:10px">${T[1]}</h2><p class="sub" style="text-align:center">${T[2]}</p>
+  ${kind==='expired'?`<button class="btn primary go" type="button" onclick="openAbo()" style="display:flex">✅ فعّل حسابي</button>`:''}
   ${wa?`<a class="btn primary go" style="display:flex;text-decoration:none" href="https://wa.me/${wa.replace(/^0/,'213')}" target="_blank" rel="noopener">💬 راسلنا على WhatsApp</a>`:''}
   ${ph?`<a class="btn go" style="display:flex;text-decoration:none;color:var(--ink)" href="tel:${xe(ph)}">📞 <span class="ltr">${xe(ph)}</span></a>`:''}
   <div class="row" style="justify-content:center"><button class="lnk" data-g="logout" type="button">تسجيل الخروج</button></div></div><div class="foot">ADM Auto © ${new Date().getFullYear()}</div>`}
@@ -444,7 +496,7 @@ async function planBar(){const old=document.getElementById('planbar');if(!inside
   const wa=(CONTACT.whatsapp||'').replace(/\D/g,'').replace(/^0/,'213');
   const txt=paid?`⏰ اشتراكك ينتهي ${d<=1?'غدًا':'بعد '+d+' يوم'} — جدّده بـ <bdi dir="ltr">12 000</bdi> دج لعام كامل`:`🎁 تجربة مجانية — باقي لك ${d<=1?'آخر يوم':d+' أيام'} · اشترك بـ <bdi dir="ltr">12 000</bdi> دج لعام كامل`;
   const msg=encodeURIComponent(paid?'سلام، نحب نجدّد اشتراك ADM Auto ('+(USER?USER.email:'')+')':'سلام، نحب نشترك في ADM Auto ('+(USER?USER.email:'')+')');
-  const h=`<div id="planbar" style="background:${paid?'var(--warn-soft,#FBF0D3)':'#E0EAF7'};color:${paid?'#7a4f00':'#1d4a80'};display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 12px;font-weight:700;font-size:14px;text-align:center"><span>${txt}</span>${wa?`<a href="https://wa.me/${wa}?text=${msg}" target="_blank" rel="noopener" style="background:#1C7A52;color:#fff;border-radius:999px;padding:4px 12px;text-decoration:none;white-space:nowrap">💬 ${paid?'جدّد الآن':'اشترك الآن'}</a>`:''}</div>`;
+  const h=`<div id="planbar" style="background:${paid?'var(--warn-soft,#FBF0D3)':'#E0EAF7'};color:${paid?'#7a4f00':'#1d4a80'};display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 12px;font-weight:700;font-size:14px;text-align:center"><span>${txt}</span><button type="button" onclick="openAbo()" style="background:#1C7A52;color:#fff;border:0;border-radius:999px;padding:4px 12px;white-space:nowrap;font:inherit;cursor:pointer">${paid?'جدّد الآن':'اشترك الآن'}</button></div>`;
   if(old)old.outerHTML=h;else{const c=document.querySelector('.chrome');if(c)c.insertAdjacentHTML('afterbegin',h)}}
 /* statut de sauvegarde */
 function setCloud(st){const c=document.getElementById('cloud');if(!c)return;c.className=st;

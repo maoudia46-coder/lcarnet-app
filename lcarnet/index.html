@@ -200,9 +200,9 @@ function topbar(title,sub,back){return `<div class="top">${back?`<button class="
 function trialBanner(){
   if(!ACC)return'';const d=daysLeft();
   if(!ACC.active||ACC.status!=='active')return `<div class="banner x">⛔ حسابك موقوف. الكريدي تاعك محفوظ، تقدر تشوفو برك.<button onclick="K.contact()">اتصل بنا</button></div>`;
-  if(d!==null&&d<=0)return `<div class="banner x">⏰ كمّلت التجربة. الكريدي تاعك محفوظ كامل — اشترك باش تزيد تسجّل.<button onclick="K.contact()">اشترك</button></div>`;
-  if(ACC.plan!=='paid'&&d!==null)return `<div class="banner t">🎁 التجربة باطل: باقي لك <span class="num">${d}</span> ${d>10?'يوم':'أيام'}<button onclick="K.contact()">اشترك</button></div>`;
-  if(ACC.plan==='paid'&&d!==null&&d<=15)return `<div class="banner w">🔔 اشتراكك يكمّل بعد <span class="num">${d}</span> أيام<button onclick="K.contact()">جدّد</button></div>`;
+  if(d!==null&&d<=0)return `<div class="banner x">⏰ كمّلت التجربة. الكريدي تاعك محفوظ كامل — اشترك باش تزيد تسجّل.<button onclick="openAbo()">اشترك</button></div>`;
+  if(ACC.plan!=='paid'&&d!==null)return `<div class="banner t">🎁 التجربة باطل: باقي لك <span class="num">${d}</span> ${d>10?'يوم':'أيام'}<button onclick="openAbo()">اشترك</button></div>`;
+  if(ACC.plan==='paid'&&d!==null&&d<=15)return `<div class="banner w">🔔 اشتراكك يكمّل بعد <span class="num">${d}</span> أيام<button onclick="openAbo()">جدّد</button></div>`;
   if(ACC.plan==='paid'&&ACC.expires_at)return `<div class="banner g">✅ اشتراك سنوي مفعّل حتى <bdi dir="ltr" class="num">${new Date(ACC.expires_at).toLocaleDateString('fr-FR',{timeZone:'Africa/Algiers'})}</bdi></div>`;
   return'';
 }
@@ -328,7 +328,8 @@ const K=window.K={
     <button onclick="K.exportCsv()"><i>📤</i>حمّل نسخة من الكناش (Excel)</button>
     ${IS_MEMBER?'':`<button onclick="K.team()"><i>👥</i>الشركاء (يخدمو معاك في نفس الكارني)</button>`}
     <button onclick="K.shopName()"><i>🏪</i>اسم الحانوت</button>
-    <button onclick="K.notifAsk(true)"><i>🔔</i>التنبيهات</button>
+    <button onclick="openAbo()"><i>✅</i>فعّل حسابي</button>
+     <button onclick="K.notifAsk(true)"><i>🔔</i>التنبيهات</button>
     <button onclick="K.install()"><i>📲</i>ثبّت الكارني في التيليفون</button>${APK_URL&&/Android/i.test(navigator.userAgent)&&!isApp()?'<a href="'+APK_URL+'" download="LCarnet.apk" style="text-decoration:none;color:inherit"><button><i>⬇️</i>حمّل التطبيق (APK)</button></a>':''}
     <button onclick="K.contact()"><i>💬</i>اتصل بنا / الاشتراك${ACC&&ACC.plan!=='paid'&&d!==null?` (باقي ${d} أيام)`:''}</button>
     <button onclick="K.changePin()"><i>🔑</i>بدّل الكود السري</button>
@@ -387,12 +388,64 @@ async function welcomeSheet(){
   <div class="wl-li"><i>☁</i><span><b>المعلومات تاعك محفوظة في الإنترنت</b>ماشي غير في التيليفون. إذا ضاع ولا تبدّل، تدخل بالرقم والكود تاعك وتلقى كلش.</span></div>
   <div class="wl-li"><i>📤</i><span><b>نسخة كاملة في يدك</b>في أي وقت تحمّل نسخة من الكناش (Excel) ولا تطبعو، من القائمة ← «حمّل نسخة من الكناش».</span></div>
   <div class="wl-wa"><b>بعثلنا رسالة في واتساب</b><span>نبعثولك الدليل كامل ونجاوبوك على أي سؤال.</span>
-  <a class="btn wa" id="wlwa" href="https://wa.me/${p}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">💬 كتبلنا في واتساب</a></div>
+  <a class="btn wa" id="wlwa" href="https://wa.me/${p}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">💬 أكتبلنا في واتساب</a></div>
   <button class="btn l" id="wlok" style="margin-top:10px">نبدا نخدم</button></div>`);
   let gone=false;const next=()=>{if(gone)return;gone=true;closeSheet();setTimeout(()=>notifAsk(false),700)};
   s.querySelector('#wlok').onclick=next;s.querySelector('#wlwa').addEventListener('click',()=>setTimeout(next,1500));
   s.onclick=e=>{if(e.target===s)next()};
 }
+/* ADM Digital — rubrique « فعّل حسابك » (commune L'Carnet / ADM Auto) */
+window.ADMAbo=function(o){
+  var old=document.getElementById('admabo');if(old)old.remove();
+  if(!document.getElementById('admabo-css')){var st=document.createElement('style');st.id='admabo-css';st.textContent=
+  '#admabo{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;direction:rtl;font-family:inherit}'+
+  '#admabo .in{background:#fff;color:#16211B;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom));text-align:right}'+
+  '#admabo .tp{text-align:center;background:linear-gradient(135deg,#0F6E4F,#1DA851);color:#fff;border-radius:18px;padding:16px 12px}'+
+  '#admabo .tp h3{font-size:22px;margin:2px 0 6px;color:#fff}#admabo .pr{display:inline-block;background:#fff;color:#0F6E4F;font-weight:900;border-radius:99px;padding:4px 16px;font-size:20px}'+
+  '#admabo .sb{font-size:13px;opacity:.92;margin-top:6px}#admabo h4{font-size:16px;margin:14px 2px 6px}'+
+  '#admabo .li{display:flex;gap:10px;align-items:flex-start;background:#F0F7F3;border-radius:12px;padding:9px 11px;margin:6px 0;font-size:14px;line-height:1.5}#admabo .li i{font-style:normal;font-size:18px}#admabo .li b{display:block;font-size:14.5px}'+
+  '#admabo .qt{background:#FFF8E6;border-right:4px solid #E8A400;border-radius:10px;padding:9px 12px;font-size:14px;margin:10px 0}#admabo .qt small{display:block;color:#7a6a3a;margin-top:3px}'+
+  '#admabo .py{border:2px solid #DCE3DE;border-radius:14px;padding:10px 12px;margin:8px 0}#admabo .py .t{font-weight:800;font-size:15px;display:flex;justify-content:space-between;align-items:center}'+
+  '#admabo .nm{direction:ltr;unicode-bidi:isolate;font-family:monospace;font-size:17px;font-weight:700;letter-spacing:.5px;display:block;text-align:left;margin:4px 0;user-select:all}'+
+  '#admabo .cp{background:#0F6E4F;color:#fff;border:0;border-radius:8px;padding:4px 12px;font:inherit;font-weight:700;font-size:13px;cursor:pointer}'+
+  '#admabo .ow{font-size:13px;color:#5C6B62}#admabo .stp{font-size:14px;line-height:1.8;background:#F7F8F7;border-radius:12px;padding:8px 12px}'+
+  '#admabo .bt{display:block;width:100%;text-align:center;border-radius:12px;padding:11px;font-weight:800;font-size:16px;margin-top:8px;color:#fff;text-decoration:none;border:0;font-family:inherit;cursor:pointer}'+
+  '#admabo .wa{background:#1DA851}#admabo .fb{background:#1877F2}#admabo .ig{background:linear-gradient(90deg,#F58529,#DD2A7B,#8134AF)}#admabo .lt{background:#EEF1EF;color:#16211B}'+
+  '#admabo .nt{font-size:13.5px;color:#5C6B62;text-align:center;margin-top:12px;line-height:1.6}';
+  document.head.appendChild(st)}
+  var wa=String(o.wa||'0550240283').replace(/\D/g,'');wa='213'+wa.replace(/^213/,'').replace(/^0/,'');
+  var who=o.who?' ('+o.who+')':'';
+  var mRec=encodeURIComponent('السلام عليكم، خلّصت الاشتراك تاع '+o.app+who+'. هذا le reçu:');
+  var mAsk=encodeURIComponent('السلام عليكم، عندي سؤال على الاشتراك تاع '+o.app+who+'.');
+  var li=(o.benefits||[]).map(function(b){return '<div class="li"><i>'+b[0]+'</i><span><b>'+b[1]+'</b>'+b[2]+'</span></div>'}).join('');
+  var d=document.createElement('div');d.id='admabo';
+  d.innerHTML='<div class="in"><div class="tp"><h3>فعّل حسابك</h3><span class="pr"><bdi dir="ltr">'+o.price+'</bdi> دج للعام</span><div class="sb">'+o.perDay+'</div></div>'+
+  '<h4>واش تربح مع '+o.app+'</h4>'+li+(o.quote?'<div class="qt">«'+o.quote+'»<small>— '+(o.quoteBy||'')+'</small></div>':'')+
+  '<h4>كيفاش تخلّص</h4>'+
+  '<div class="py"><div class="t">BaridiMob <button class="cp" data-c="00799999001965385979">نسخ</button></div><span class="nm">00799999001965385979</span><span class="ow">باسم: AOUDIA MOHAMED</span></div>'+
+  '<div class="py"><div class="t">CCP <button class="cp" data-c="0019653859">نسخ</button></div><span class="nm">0019653859 clé 79</span><span class="ow">باسم: AOUDIA MOHAMED</span></div>'+
+  '<div class="stp">1. خلّص <bdi dir="ltr">'+o.price+'</bdi> دج.<br>2. صوّر le reçu.<br>3. بعثو لنا مع رقم التيليفون تاعك، ونفعّلولك الحساب في أقرب وقت.</div>'+
+  '<a class="bt wa" target="_blank" rel="noopener" href="https://wa.me/'+wa+'?text='+mRec+'">بعث le reçu في واتساب</a>'+
+  '<a class="bt fb" target="_blank" rel="noopener" href="https://m.me/102198542397576">بعثو في الفيسبوك</a>'+
+  '<a class="bt ig" target="_blank" rel="noopener" href="https://ig.me/m/admdigital.dz">بعثو في الإنستغرام</a>'+
+  '<div class="nt">حاب تحكي معانا قبل ما تخلّص؟ ما كاين حتى مشكل، أكتبلنا ونجاوبوك على كل سؤال.</div>'+
+  '<a class="bt lt" target="_blank" rel="noopener" href="https://wa.me/'+wa+'?text='+mAsk+'">نحكي معاكم قبل</a>'+
+  '<button class="bt lt" data-x="1" style="margin-top:6px">رجوع</button></div>';
+  d.addEventListener('click',function(e){
+    if(e.target===d||e.target.closest('[data-x]')){d.remove();return}
+    var c=e.target.closest('.cp');if(c){var v=c.getAttribute('data-c');
+      var ok=function(){c.textContent='تنسخ ✓';setTimeout(function(){c.textContent='نسخ'},1500)};
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(v).then(ok,function(){prompt('',v)});else prompt('',v)}
+  });
+  document.body.appendChild(d);
+};
+
+window.openAbo=async function(){try{closeSheet()}catch(e){}
+  if(!CONTACT.whatsapp){try{const{data}=await sb.rpc('get_contact');if(data)CONTACT=data}catch(e){}}
+  const who=(ACC&&ACC.phone)||'';
+  ADMAbo({app:'الكارني',who,wa:CONTACT.whatsapp,price:'3000',perDay:'يعني أقل من 9 دج في النهار',
+   benefits:[['📒','كل الكريدي في بلاصة وحدة','شكون يسالك وشكون تسالو، بالتاريخ والساعة.'],['⚡','الدليل في ثانية','كي يقولك «خلّصتك»، تحلّ تيليفونك وتوريلو.'],['☁','محفوظ في الإنترنت','ضاع التيليفون؟ تدخل من آخر وتلقى كلش.'],['💬','تذكير واتساب بلا حشمة','تبعث للزبون شحال عليه بضغطة وحدة.'],['👥','الشركاء','واحد يخدم معاك يسجّل في نفس الكارني.']],
+   quote:'شكرا بزاف على التطبيق، كنت في مشكل كبير مع الكريدي في السوبيرات.',quoteBy:'تاجر يخدم بالكارني'})};
 function motivSheet(){
   const d=daysLeft();
   const s=sheet(`<div class="wl"><div class="wl-top"><div class="wl-ic">🤝</div><h3>جرّب، ما راك خاسر والو</h3>${d!==null&&d>0&&ACC&&ACC.plan!=='paid'?`<span class="wl-badge">باقي لك <bdi class="num">${d}</bdi> ${d>10?'يوم':'أيام'} باطل</span>`:''}</div>
