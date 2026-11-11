@@ -73,6 +73,7 @@ button{cursor:pointer}
 .sheet{position:fixed;inset:0;background:rgba(10,20,15,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet .in{background:#fff;width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
 .sheet h3{margin:0 0 4px;font-size:21px}
+.wl-top{text-align:center;background:linear-gradient(135deg,#0F6E4F,#1DA851);color:#fff;border-radius:18px;padding:18px 12px 16px;margin-bottom:12px}.wl-top h3{color:#fff;font-size:22px;margin:4px 0 8px}.wl-ic{font-size:44px;line-height:1}.wl-badge{display:inline-block;background:#fff;color:#0F6E4F;font-weight:800;border-radius:99px;padding:5px 14px;font-size:15px}.wl-li{display:flex;gap:10px;align-items:flex-start;background:var(--g2);border-radius:14px;padding:11px 12px;margin-bottom:8px;font-size:15px;color:var(--ink)}.wl-li i{font-style:normal;font-size:22px}.wl-li b{display:block;font-size:16px;margin-bottom:2px}.wl-wa{border:2px solid #1DA851;border-radius:16px;padding:12px;margin-top:6px;text-align:center}.wl-wa b{display:block;font-size:17px}.wl-wa span{display:block;color:var(--muted);font-size:14px;margin:3px 0 10px}.wl-wa .btn{display:block;text-decoration:none}
 .sheet p{color:var(--muted);margin:0 0 12px;font-size:15px}
 label{display:block;font-weight:700;margin:10px 0 6px;font-size:15px}
 .inp{width:100%;padding:14px;border:1px solid var(--line);border-radius:14px;font-size:18px;background:#fff}
@@ -377,6 +378,21 @@ async function subscribePush(){
   await sb.from('push_subs').upsert({endpoint:j.endpoint,user_id:USER.id,p256dh:j.keys.p256dh,auth:j.keys.auth,ua:navigator.userAgent.slice(0,200)},{onConflict:'endpoint'});
   return true;
 }
+async function welcomeSheet(){
+  if(!CONTACT.whatsapp){try{const{data}=await sb.rpc('get_contact');if(data)CONTACT=data}catch(e){}}
+  const wa=(CONTACT.whatsapp||'0550240283').replace(/\D/g,'');const p='213'+wa.replace(/^0/,'').replace(/^213/,'');
+  const shop=(ACC&&ACC.agency_name)||'';const ph=(ACC&&ACC.phone)||'';
+  const msg='السلام عليكم، سجلت في الكارني'+(shop?' باسم '+shop:'')+(ph?' ('+ph+')':'')+'. حاب نعرف كيفاش نخدم بيه.';
+  const s=sheet(`<div class="wl"><div class="wl-top"><div class="wl-ic">🎉</div><h3>مرحبا بيك في الكارني${shop?'، '+esc(shop):''}</h3><div class="wl-badge">عندك 10 أيام باطل</div></div>
+  <div class="wl-li"><i>☁</i><span><b>المعلومات تاعك محفوظة في الإنترنت</b>ماشي غير في التيليفون. إذا ضاع ولا تبدّل، تدخل بالرقم والكود تاعك وتلقى كلش.</span></div>
+  <div class="wl-li"><i>📤</i><span><b>نسخة كاملة في يدك</b>في أي وقت تحمّل نسخة من الكناش (Excel) ولا تطبعو، من القائمة ← «حمّل نسخة من الكناش».</span></div>
+  <div class="wl-wa"><b>بعثلنا رسالة في واتساب</b><span>نبعثولك الدليل كامل ونجاوبوك على أي سؤال.</span>
+  <a class="btn wa" id="wlwa" href="https://wa.me/${p}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">💬 كتبلنا في واتساب</a></div>
+  <button class="btn l" id="wlok" style="margin-top:10px">نبدا نخدم</button></div>`);
+  let gone=false;const next=()=>{if(gone)return;gone=true;closeSheet();setTimeout(()=>notifAsk(false),700)};
+  s.querySelector('#wlok').onclick=next;s.querySelector('#wlwa').addEventListener('click',()=>setTimeout(next,1500));
+  s.onclick=e=>{if(e.target===s)next()};
+}
 async function notifAsk(force){
   closeSheet();
   if(!('Notification'in window)){if(window.KR_INAPP&&/Android/i.test(navigator.userAgent)){escSheet();return}if(force)toast('التيليفون هذا ما يقبلش التنبيهات');return}
@@ -453,7 +469,7 @@ async function enter(user){
   try{localStorage.setItem('kredi_last',JSON.stringify({id:user.id,user_metadata:user.user_metadata,owner:OWNER,name:ME}))}catch(e){}
   ROUTE={r:'home'};history.replaceState(ROUTE,'');render();sync();
   try{let dv=localStorage.getItem('adm-dev');if(!dv||!/^[a-z0-9]{8,40}$/.test(dv)){dv=(Date.now().toString(36)+Math.random().toString(36).slice(2,12)).toLowerCase();localStorage.setItem('adm-dev',dv)}sb.rpc('see_device',{d:dv}).then(()=>{},()=>{})}catch(e){}
-  if(localStorage.getItem('kredi_new')){localStorage.removeItem('kredi_new');setTimeout(()=>{toast('🎉 مرحبا! عندك 10 أيام باطل',3200);setTimeout(()=>notifAsk(false),1200)},400)}
+  if(localStorage.getItem('kredi_new')){localStorage.removeItem('kredi_new');setTimeout(welcomeSheet,400)}
   else if('Notification'in window&&Notification.permission==='granted'){subscribePush().catch(()=>{})}
   else if('Notification'in window&&Notification.permission==='default'){let lt=0;try{lt=+localStorage.getItem('kr-na')||0;if(Date.now()-lt>864e5)localStorage.setItem('kr-na',String(Date.now()))}catch(e){}if(Date.now()-lt>864e5)setTimeout(()=>notifAsk(false),2500)}
   else if(window.KR_INAPP&&/Android/i.test(navigator.userAgent)){let sh=false;try{sh=sessionStorage.getItem('kr-esc2')==='1';sessionStorage.setItem('kr-esc2','1')}catch(e){}if(!sh)setTimeout(escSheet,1500)}
