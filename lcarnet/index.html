@@ -45,7 +45,7 @@ button{cursor:pointer}
 .av{width:46px;height:46px;border-radius:50%;background:var(--g2);color:var(--g);display:grid;place-items:center;font-weight:800;font-size:20px;flex:none}
 .cl .n{font-weight:800;font-size:18px}.cl .s{color:var(--muted);font-size:13px}
 .cl .m{margin-inline-start:auto;text-align:left;font-weight:800;font-size:19px}
-.due{color:var(--r)}.ok{color:var(--g)}.zero{color:var(--muted)}
+.due{color:var(--r)}.owe{color:var(--o)}.kd{display:flex;gap:8px;margin:2px 0 10px}.kd button{flex:1;border:2px solid var(--line,#DCE3DE);background:#fff;border-radius:12px;padding:9px 6px;font:inherit;font-weight:800;font-size:14px;line-height:1.35;cursor:pointer;color:inherit}.kd button.on{border-color:var(--g);background:#E2F2EA;color:var(--g)}.kd button.on.f{border-color:var(--o);background:#FFF3E0;color:var(--o)}.kd small{display:block;font-weight:600;font-size:12px;opacity:.8}.fchips{display:flex;gap:8px;margin:0 0 10px;overflow-x:auto}.fchips button{border:1.5px solid #DCE3DE;background:#fff;border-radius:99px;padding:6px 14px;font:inherit;font-weight:700;font-size:14px;white-space:nowrap;cursor:pointer;color:inherit}.fchips button.on{background:var(--g);border-color:var(--g);color:#fff}.tag{display:inline-block;font-size:11px;font-weight:800;color:var(--o);background:#FFF3E0;border-radius:99px;padding:1px 8px;margin-inline-start:6px;vertical-align:middle}.tot.f .val{color:var(--o)}.tot.f .ic{background:#FFF3E0}.ok{color:var(--g)}.zero{color:var(--muted)}
 .fab{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(528px,calc(100% - 32px));border:0;border-radius:18px;background:var(--g);color:#fff;font-size:20px;font-weight:800;padding:17px;box-shadow:0 10px 30px rgba(15,110,79,.35);z-index:6}
 .empty{text-align:center;padding:22px 16px}
 .empty .big{font-size:56px}
@@ -129,7 +129,7 @@ document.body.appendChild(d)}
 if(document.body)bar();else document.addEventListener('DOMContentLoaded',bar);
 }catch(e){}})();
 </script>
-<script src="lang.js?v=2"></script>
+<script src="lang.js?v=3"></script>
 <div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -187,7 +187,9 @@ let CONTACT={whatsapp:'',price:''};
 const alive=a=>(a||[]).filter(x=>!x.del);
 function bal(cid){let s=0;for(const t of alive(D.tx))if(t.c===cid)s+=t.t==='c'?t.a:-t.a;return s}
 function lastTx(cid){let m=0;for(const t of alive(D.tx))if(t.c===cid&&t.d>m)m=t.d;return m}
-function total(){let s=0;for(const c of alive(D.customers)){const b=bal(c.id);if(b>0)s+=b}return s}
+const isF=c=>!!c&&c.k==='f';
+function total(){let s=0;for(const c of alive(D.customers)){if(isF(c))continue;const b=bal(c.id);if(b>0)s+=b}return s}
+function totalF(){let s=0;for(const c of alive(D.customers)){if(!isF(c))continue;const b=bal(c.id);if(b>0)s+=b}return s}
 
 /* ---------- routeur ---------- */
 let ROUTE={r:'home'};
@@ -209,7 +211,7 @@ function trialBanner(){
 }
 
 /* ---------- écrans ---------- */
-let Q='';
+let Q='',FILT='all';
 function render(){
   if(!USER)return;
   document.body.classList.toggle('ro',!canWrite());
@@ -217,7 +219,9 @@ function render(){
   const custs=alive(D.customers).map(c=>({...c,b:bal(c.id),l:lastTx(c.id)}));
   custs.sort((a,b)=>(b.b>0)-(a.b>0)||b.b-a.b||b.l-a.l);
   const q=Q.trim().toLowerCase();
-  const list=q?custs.filter(c=>(c.n+' '+(c.p||'')).toLowerCase().includes(q)):custs;
+  const hasF=custs.some(isF);if(!hasF)FILT='all';
+  const base=FILT==='c'?custs.filter(c=>!isF(c)):FILT==='f'?custs.filter(isF):custs;
+  const list=q?base.filter(c=>(c.n+' '+(c.p||'')).toLowerCase().includes(q)):base;
   const shop=(D.shop&&D.shop.name)||(ACC&&ACC.agency_name)||'الكارني';
   let h=topbar(shop,'كناش الكريدي');
   h+=`<div class="wrap">${trialBanner()}`;
@@ -230,10 +234,10 @@ function render(){
       <div><i>📤</i><span><b>نسخة في يدك</b>تقدر تطبع ولا تحمّل الكناش كامل وقتما حبيت.</span></div>
     </div>`;
   }else{
-    const dueN=custs.filter(c=>c.b>0).length;
-    h+=`<div class="card tot"><div class="ic">💰</div><div><div class="lbl">الكريدي اللي برّا (عند ${fmt(dueN)} زبون)</div><div class="val">${da(total())}</div></div></div>
+    const dueN=custs.filter(c=>c.b>0&&!isF(c)).length,fs=custs.filter(isF),dueF=fs.filter(c=>c.b>0).length;
+    h+=`<div class="card tot"><div class="ic">💰</div><div><div class="lbl">الكريدي اللي برّا (عند ${fmt(dueN)} زبون)</div><div class="val">${da(total())}</div></div></div>${hasF?`<div class="card tot f"><div class="ic">🏭</div><div><div class="lbl">الفورنيسورات (الديون) · ${fmt(dueF)}</div><div class="val">${da(totalF())}</div></div></div><div class="fchips"><button class="${FILT==='all'?'on':''}" onclick="K.filt('all')">الكل</button><button class="${FILT==='c'?'on':''}" onclick="K.filt('c')">👤 الزبائن</button><button class="${FILT==='f'?'on':''}" onclick="K.filt('f')">🏭 الفورنيسورات</button></div>`:''}
     <input class="search" type="search" placeholder="🔎 ابحث على زبون…" value="${esc(Q)}" oninput="K.q(this.value)">
-    <div id="cl">${list.map(c=>`<button class="cl" onclick="K.open('${c.id}')"><div class="av">${esc((c.n||'?').trim().charAt(0))}</div><div><div class="n">${esc(c.n)}</div><div class="s">${c.l?'آخر حركة '+dstr(c.l).slice(0,10):'ما كاين حتى حركة'}</div></div><div class="m ${c.b>0?'due':c.b<0?'ok':'zero'}">${c.b===0?'خالص ✓':da(Math.abs(c.b))}${c.b<0?'<div class="s">عندو عندك</div>':''}</div></button>`).join('')||'<p class="hint" style="text-align:center">ما لقينا حتى زبون بهذا الاسم.</p>'}</div>`;
+    <div id="cl">${list.map(c=>`<button class="cl" onclick="K.open('${c.id}')"><div class="av">${esc((c.n||'?').trim().charAt(0))}</div><div><div class="n">${esc(c.n)}${isF(c)?'<span class="tag">فورنيسور</span>':''}</div><div class="s">${c.l?'آخر حركة '+dstr(c.l).slice(0,10):'ما كاين حتى حركة'}</div></div><div class="m ${c.b>0?(isF(c)?'owe':'due'):c.b<0?'ok':'zero'}">${c.b===0?'خالص ✓':da(Math.abs(c.b))}${isF(c)&&c.b>0?'<div class="s">نسالو</div>':''}${c.b<0?(isF(c)?'<div class="s">خلّصت زايد</div>':'<div class="s">عندو عندك</div>'):''}</div></button>`).join('')||'<p class="hint" style="text-align:center">ما لقينا حتى زبون بهذا الاسم.</p>'}</div>`;
   }
   h+=`</div>${custs.length?`<button class="fab" onclick="K.newCust()">➕ زبون جديد</button>`:''}`;
   app.innerHTML=h;pill();
@@ -241,14 +245,14 @@ function render(){
 }
 function renderCust(id){
   const c=alive(D.customers).find(x=>x.id===id);if(!c){ROUTE={r:'home'};return render()}
-  const b=bal(id);
+  const b=bal(id),F=isF(c);
   const txs=alive(D.tx).filter(t=>t.c===id).sort((a,b)=>b.d-a.d);
   let h=topbar(c.n,c.p||'',true)+`<div class="wrap">${trialBanner()}
-  <div class="card cbal"><div class="l">${b>0?'عليه كريدي':b<0?'عندو عندك (دفع زايد)':'خالص، ما عليه والو'}</div><div class="v ${b>0?'due':b<0?'ok':'zero'}">${da(Math.abs(b))}</div></div>
-  <div class="row2" style="margin-top:12px" data-w><button class="btn r" onclick="K.entry('${id}','c')">➕ كريدي</button><button class="btn g" onclick="K.entry('${id}','p')">➖ خلّص</button></div>
-  <div class="row2" style="margin-top:10px"><button class="btn wa" onclick="K.wa('${id}')">📲 تذكير واتساب</button><button class="btn l" onclick="K.statement('${id}')">🧾 كشف الحساب</button></div>
-  <div class="card hist"><h3>التاريخ (${fmt(txs.length)} حركة)</h3>${txs.map(t=>`<div class="tx"><div class="k ${t.t==='c'?'c':'p'}">${t.t==='c'?'+':'−'}</div><div><div style="font-weight:700">${t.t==='c'?'كريدي':'خلّص'}${t.n?' · '+esc(t.n):''}</div><div class="d"><span class="num">${dstr(t.d)}</span>${t.by?` · ✍ ${esc(t.by)}`:''}</div></div><div class="a ${t.t==='c'?'due':'ok'}">${da(t.a)}</div><button class="del" data-w onclick="K.delTx('${t.id}')" aria-label="حذف">🗑</button></div>`).join('')||'<p class="hint">ما كاين حتى حركة.</p>'}</div>
-  <div style="margin-top:12px" class="row2" data-w><button class="btn l" onclick="K.editCust('${id}')">✏ بدّل الاسم / الرقم</button><button class="btn l" style="color:var(--r)" onclick="K.delCust('${id}')">🗑 حذف الزبون</button></div>
+  <div class="card cbal"><div class="l">${F?(b>0?'🏭 فورنيسور · نسالو (الدين اللي عليّا)':b<0?'🏭 فورنيسور · خلّصتو زايد':'🏭 فورنيسور · خالص، ما نسالو والو'):(b>0?'عليه كريدي':b<0?'عندو عندك (دفع زايد)':'خالص، ما عليه والو')}</div><div class="v ${b>0?(F?'owe':'due'):b<0?'ok':'zero'}">${da(Math.abs(b))}</div></div>
+  <div class="row2" style="margin-top:12px" data-w><button class="btn r" onclick="K.entry('${id}','c')">${F?'➕ دين (خذيت بالكريدي)':'➕ كريدي'}</button><button class="btn g" onclick="K.entry('${id}','p')">${F?'➖ خلّصتو':'➖ خلّص'}</button></div>
+  <div class="row2" style="margin-top:10px">${F?'':`<button class="btn wa" onclick="K.wa('${id}')">📲 تذكير واتساب</button>`}<button class="btn l" onclick="K.statement('${id}')">🧾 كشف الحساب</button></div>
+  <div class="card hist"><h3>التاريخ (${fmt(txs.length)} حركة)</h3>${txs.map(t=>`<div class="tx"><div class="k ${t.t==='c'?'c':'p'}">${t.t==='c'?'+':'−'}</div><div><div style="font-weight:700">${t.t==='c'?(F?'دين':'كريدي'):(F?'خلّصتو':'خلّص')}${t.n?' · '+esc(t.n):''}</div><div class="d"><span class="num">${dstr(t.d)}</span>${t.by?` · ✍ ${esc(t.by)}`:''}</div></div><div class="a ${t.t==='c'?(F?'owe':'due'):'ok'}">${da(t.a)}</div><button class="del" data-w onclick="K.delTx('${t.id}')" aria-label="حذف">🗑</button></div>`).join('')||'<p class="hint">ما كاين حتى حركة.</p>'}</div>
+  <div style="margin-top:12px" class="row2" data-w><button class="btn l" onclick="K.editCust('${id}')">✏ بدّل الاسم / الرقم</button><button class="btn l" style="color:var(--r)" onclick="K.delCust('${id}')">${F?'🗑 حذف الفورنيسور':'🗑 حذف الزبون'}</button></div>
   </div>`;
   app.innerHTML=h;pill();
 }
@@ -260,7 +264,7 @@ function guard(){if(canWrite())return true;K.contact();return false}
 
 function amountSheet(title,sub,color,cb,withName){
   let v='';
-  const s=sheet(`<h3>${title}</h3><p>${sub}</p>${withName?`<label>اسم الزبون</label><input class="inp" id="nm" placeholder="مثلا: عمي رابح" autocomplete="off"><label>رقم التيليفون (ماشي لازم)</label><input class="inp num" id="ph" type="tel" inputmode="tel" placeholder="05 / 06 / 07…" style="text-align:right"><label>شحال الكريدي؟ (إذا ما عليه والو خلّيها 0)</label>`:''}
+  const s=sheet(`<h3 id="st">${title}</h3><p>${sub}</p>${withName?`<div class="kd"><button type="button" class="on" data-kd="c">👤 زبون<small>يسالني</small></button><button type="button" data-kd="f" class="f">🏭 فورنيسور<small>نسالو (الديون)</small></button></div><label id="nml">اسم الزبون</label><input class="inp" id="nm" placeholder="مثلا: عمي رابح" autocomplete="off"><label>رقم التيليفون (ماشي لازم)</label><input class="inp num" id="ph" type="tel" inputmode="tel" placeholder="05 / 06 / 07…" style="text-align:right"><label id="aml">شحال الكريدي؟ (إذا ما عليه والو خلّيها 0)</label>`:''}
   <div class="amt num" id="am" style="color:${color}">0 دج</div>
   <div class="quick">${[100,200,500,1000,2000].map(x=>`<button data-q="${x}">+${x}</button>`).join('')}</div>
   <div class="pad">${['1','2','3','4','5','6','7','8','9','00','0','⌫'].map(k=>`<button class="${k==='⌫'?'x':''}" data-k="${k}">${k}</button>`).join('')}</div>
@@ -271,7 +275,7 @@ function amountSheet(title,sub,color,cb,withName){
   s.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;if(k==='⌫')v=v.slice(0,-1);else if(v.length<8)v=(v+k).replace(/^0+/,'');show()});
   s.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{v=String((+v||0)+(+b.dataset.q));show()});
   s.querySelector('#ok').onclick=()=>{const r=cb(+v||0,s.querySelector('#nt').value.trim(),s);if(r){s.querySelector('#er').textContent=r}else closeSheet()};
-  if(withName)setTimeout(()=>s.querySelector('#nm').focus(),150);
+  if(withName){s.kd='c';s.querySelectorAll('[data-kd]').forEach(b=>b.onclick=()=>{s.kd=b.dataset.kd;const F=s.kd==='f';s.querySelectorAll('[data-kd]').forEach(x=>x.classList.toggle('on',x===b));s.querySelector('#st').textContent=F?'➕ فورنيسور جديد':title;s.querySelector('#nml').textContent=F?'اسم الفورنيسور':'اسم الزبون';s.querySelector('#nm').placeholder=F?'مثلا: موزّع الحليب':'مثلا: عمي رابح';s.querySelector('#aml').textContent=F?'شحال نسالو؟ (إذا ما نسالو والو خلّيها 0)':'شحال الكريدي؟ (إذا ما عليه والو خلّيها 0)';s.querySelector('#am').style.color=F?'#B86E00':color;s.querySelector('#ok').style.background=F?'#B86E00':color});setTimeout(()=>s.querySelector('#nm').focus(),150)}
   return s;
 }
 
@@ -279,12 +283,13 @@ function amountSheet(title,sub,color,cb,withName){
 const K=window.K={
   q(v){Q=v;const s=$('.search');const pos=s?s.selectionStart:0;render();const s2=$('.search');if(s2){s2.focus();try{s2.setSelectionRange(pos,pos)}catch(e){}}},
   open(id){Q='';go({r:'cust',id})},
+  filt(f){FILT=f;render()},
   newCust(){if(!guard())return;
     amountSheet('➕ زبون جديد','اكتب الاسم والكريدي تاعو. هذا كلش.','#C4362C',(a,n,s)=>{
-      const name=s.querySelector('#nm').value.trim();if(!name)return 'اكتب اسم الزبون.';
+      const F=s.kd==='f';const name=s.querySelector('#nm').value.trim();if(!name)return F?'اكتب اسم الفورنيسور.':'اكتب اسم الزبون.';
       const ph=normPhone(s.querySelector('#ph').value);
       if(alive(D.customers).some(c=>c.n.trim()===name)&&!confirm('كاين زبون بنفس الاسم. نزيدو واحد آخر؟'))return 'بدّل الاسم شوية (مثلا زيد اللقب).';
-      const c={id:uid(),n:name,p:ph,u:now(),cr:now(),by:ME};D.customers.push(c);
+      const c={id:uid(),n:name,p:ph,u:now(),cr:now(),by:ME};if(F)c.k='f';D.customers.push(c);
       const first=!alive(D.tx).length;
       if(a>0)D.tx.push({id:uid(),c:c.id,t:'c',a,n,d:now(),u:now(),by:ME});
       save();ROUTE={r:'cust',id:c.id};history.pushState(ROUTE,'');render();
@@ -292,9 +297,9 @@ const K=window.K={
     },true);
   },
   entry(id,t){if(!guard())return;const c=D.customers.find(x=>x.id===id);
-    amountSheet(t==='c'?'➕ كريدي جديد':'➖ الزبون خلّص',esc(c.n),t==='c'?'#C4362C':'#0F6E4F',(a,n)=>{
+    const F=isF(c);amountSheet(t==='c'?(F?'➕ دين جديد (خذيت بالكريدي)':'➕ كريدي جديد'):(F?'➖ خلّصت الفورنيسور':'➖ الزبون خلّص'),esc(c.n),t==='c'?(F?'#B86E00':'#C4362C'):'#0F6E4F',(a,n)=>{
       if(!a)return 'اكتب المبلغ.';
-      D.tx.push({id:uid(),c:id,t,a,n,d:now(),u:now(),by:ME});save();render();toast(t==='c'?'✔ الكريدي تسجّل':'✔ الخلاص تسجّل');
+      D.tx.push({id:uid(),c:id,t,a,n,d:now(),u:now(),by:ME});save();render();toast(t==='c'?(F?'✔ الدين تسجّل':'✔ الكريدي تسجّل'):'✔ الخلاص تسجّل');
     });
   },
   delTx(id){if(!guard())return;const t=D.tx.find(x=>x.id===id);if(!t||!confirm(`نحذفو هذي الحركة (${fmt(t.a)} دج)؟`))return;t.del=1;t.u=now();save();render()},
@@ -302,7 +307,7 @@ const K=window.K={
     const s=sheet(`<h3>✏ بدّل المعلومات</h3><label>الاسم</label><input class="inp" id="nm" value="${esc(c.n)}"><label>رقم التيليفون</label><input class="inp num" id="ph" type="tel" value="${esc(c.p||'')}" style="text-align:right"><div class="err" id="er"></div><button class="btn g" id="ok">✔ حفظ</button>`);
     s.querySelector('#ok').onclick=()=>{const n=s.querySelector('#nm').value.trim();if(!n){s.querySelector('#er').textContent='اكتب الاسم.';return}c.n=n;c.p=normPhone(s.querySelector('#ph').value);c.u=now();save();closeSheet();render()}},
   delCust(id){if(!guard())return;const c=D.customers.find(x=>x.id===id);const b=bal(id);
-    if(!confirm(b>0?`${c.n} مازال عليه ${fmt(b)} دج. متأكد تحذفو؟`:`نحذفو ${c.n}؟`))return;
+    if(!confirm(b>0?(isF(c)?`مازال نسالو ${c.n} ${fmt(b)} دج. متأكد تحذفو؟`:`${c.n} مازال عليه ${fmt(b)} دج. متأكد تحذفو؟`):`نحذفو ${c.n}؟`))return;
     c.del=1;c.u=now();for(const t of D.tx)if(t.c===id){t.del=1;t.u=now()}save();history.back()},
   wa(id){const c=D.customers.find(x=>x.id===id);const b=bal(id);const shop=(D.shop&&D.shop.name)||(ACC&&ACC.agency_name)||'';
     const msg=b>0?`السلام عليكم ${c.n}،\nهذا تذكير من ${shop||'الحانوت'}: الكريدي اللي عليك ${fmt(b)} دج.\nإذا تقدر تجي تخلّص ربي يجازيك. شكرا 🙏`:`السلام عليكم ${c.n}، الحساب تاعك عند ${shop||'الحانوت'} خالص. شكرا 🙏`;
@@ -315,9 +320,9 @@ const K=window.K={
     g.fillStyle='#16211B';g.font='800 28px Cairo,Tahoma';g.fillText('كشف حساب: '+c.n,W-28,146);g.fillStyle='#5C6B62';g.font='500 20px Cairo,Tahoma';g.direction='ltr';g.fillText(dstr(now()),W-28,182);g.direction='rtl';
     let y=230,run=0;g.font='600 21px Cairo,Tahoma';
     for(const t of txs){run+=t.t==='c'?t.a:-t.a;g.fillStyle=y%88<44?'#F6F8F6':'#fff';g.fillRect(16,y-30,W-32,rowH);
-      g.fillStyle='#5C6B62';g.textAlign='right';const ds=dstr(t.d).slice(0,10);g.direction='ltr';g.fillText(ds,W-28,y);const dw=g.measureText(ds).width;g.direction='rtl';g.fillText((t.t==='c'?'كريدي':'خلّص')+(t.n?' · \u2068'+t.n.slice(0,22)+'\u2069':''),W-28-dw-14,y);
+      g.fillStyle='#5C6B62';g.textAlign='right';const ds=dstr(t.d).slice(0,10);g.direction='ltr';g.fillText(ds,W-28,y);const dw=g.measureText(ds).width;g.direction='rtl';g.fillText((t.t==='c'?(isF(c)?'دين':'كريدي'):(isF(c)?'خلّصتو':'خلّص'))+(t.n?' · \u2068'+t.n.slice(0,22)+'\u2069':''),W-28-dw-14,y);
       g.textAlign='left';g.direction='ltr';g.fillStyle=t.t==='c'?'#C4362C':'#0F6E4F';g.fillText((t.t==='c'?'+':'−')+fmt(t.a)+' دج',28,y);g.direction='rtl';y+=rowH}
-    const b=bal(id);g.fillStyle=b>0?'#FBE4E1':'#E2F2EA';g.fillRect(16,y-8,W-32,70);g.textAlign='right';g.fillStyle=b>0?'#C4362C':'#0F6E4F';g.font='800 30px Cairo,Tahoma';g.fillText(b>0?'الباقي عليه:':'خالص',W-36,y+38);g.textAlign='left';g.direction='ltr';g.fillText(fmt(Math.abs(b))+' دج',36,y+38);g.direction='rtl';
+    const b=bal(id);g.fillStyle=b>0?'#FBE4E1':'#E2F2EA';g.fillRect(16,y-8,W-32,70);g.textAlign='right';g.fillStyle=b>0?'#C4362C':'#0F6E4F';g.font='800 30px Cairo,Tahoma';g.fillText(b>0?(isF(c)?'الباقي اللي نسالو:':'الباقي عليه:'):'خالص',W-36,y+38);g.textAlign='left';g.direction='ltr';g.fillText(fmt(Math.abs(b))+' دج',36,y+38);g.direction='rtl';
     g.textAlign='center';g.fillStyle='#9AA79F';g.font='500 16px Cairo,Tahoma';g.fillText('الكارني · L’Carnet',W/2,H-14);
     cv.toBlob(async bl=>{const f=new File([bl],'كشف-'+c.n+'.png',{type:'image/png'});
       if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'كشف الحساب'});return}catch(e){if(e.name==='AbortError')return}}
@@ -352,12 +357,12 @@ const K=window.K={
       b.disabled=false;b.textContent='✔ زيد الشريك'}},
   shopName(){const s=sheet(`<h3>🏪 اسم الحانوت</h3><p>يبان فوق وفي كشف الحساب والتذكير.</p><input class="inp" id="nm" value="${esc((D.shop&&D.shop.name)||(ACC&&ACC.agency_name)||'')}"><button class="btn g" id="ok" style="margin-top:12px">✔ حفظ</button>`);
     s.querySelector('#ok').onclick=()=>{D.shop={name:s.querySelector('#nm').value.trim(),u:now()};save();closeSheet();render()}},
-  exportCsv(){const rows=[['الزبون','الهاتف','النوع','المبلغ','ملاحظة','التاريخ']];for(const t of alive(D.tx).sort((a,b)=>a.d-b.d)){const c=D.customers.find(x=>x.id===t.c)||{};if(c.del)continue;rows.push([c.n,c.p||'',t.t==='c'?'كريدي':'خلاص',t.a,t.n||'',dstr(t.d)])}
-    rows.push([]);rows.push(['الزبون','الباقي']);for(const c of alive(D.customers))rows.push([c.n,bal(c.id)]);
+  exportCsv(){const rows=[['الزبون','الصنف','الهاتف','النوع','المبلغ','ملاحظة','التاريخ']];for(const t of alive(D.tx).sort((a,b)=>a.d-b.d)){const c=D.customers.find(x=>x.id===t.c)||{};if(c.del)continue;rows.push([c.n,isF(c)?'فورنيسور':'زبون',c.p||'',t.t==='c'?(isF(c)?'دين':'كريدي'):'خلاص',t.a,t.n||'',dstr(t.d)])}
+    rows.push([]);rows.push(['الزبون','الصنف','الباقي']);for(const c of alive(D.customers))rows.push([c.n,isF(c)?'فورنيسور (نسالو)':'زبون',bal(c.id)]);
     const csv='﻿'+rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='الكارني-'+new Date().toISOString().slice(0,10)+'.csv';a.click();toast('✔ النسخة تحمّلت')},
-  printAll(){const cs=alive(D.customers).map(c=>({...c,b:bal(c.id)})).sort((a,b)=>b.b-a.b);const w=window.open('','_blank');if(!w){toast('اسمح بالنوافذ باش تطبع');return}
-    w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>الكارني</title><style>body{font-family:Tahoma;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:8px}th{background:#E2F2EA}</style></head><body><h2>${esc((D.shop&&D.shop.name)||'الكارني')} — الكريدي (<bdi dir="ltr">${dstr(now())}</bdi>)</h2><table><tr><th>الزبون</th><th>الهاتف</th><th>الباقي (دج)</th></tr>${cs.map(c=>`<tr><td>${esc(c.n)}</td><td dir="ltr" style="text-align:right">${esc(c.p||'')}</td><td>${fmt(c.b)}</td></tr>`).join('')}<tr><th colspan="2">المجموع</th><th>${fmt(total())}</th></tr></table><script>print()<\/script></body></html>`);w.document.close()},
+  printAll(){const all=alive(D.customers).map(c=>({...c,b:bal(c.id)})).sort((a,b)=>b.b-a.b),cs=all.filter(c=>!isF(c)),fz=all.filter(isF);const w=window.open('','_blank');if(!w){toast('اسمح بالنوافذ باش تطبع');return}
+    w.document.write(`<html dir="rtl"><head><meta charset="utf-8"><title>الكارني</title><style>body{font-family:Tahoma;padding:20px}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:8px}th{background:#E2F2EA}</style></head><body><h2>${esc((D.shop&&D.shop.name)||'الكارني')} — الكريدي (<bdi dir="ltr">${dstr(now())}</bdi>)</h2><table><tr><th>الزبون</th><th>الهاتف</th><th>الباقي (دج)</th></tr>${cs.map(c=>`<tr><td>${esc(c.n)}</td><td dir="ltr" style="text-align:right">${esc(c.p||'')}</td><td>${fmt(c.b)}</td></tr>`).join('')}<tr><th colspan="2">المجموع</th><th>${fmt(total())}</th></tr></table>${fz.length?`<h2 style="margin-top:24px">الفورنيسورات (الديون)</h2><table><tr><th>الفورنيسور</th><th>الهاتف</th><th>نسالو (دج)</th></tr>${fz.map(c=>`<tr><td>${esc(c.n)}</td><td dir="ltr" style="text-align:right">${esc(c.p||'')}</td><td>${fmt(c.b)}</td></tr>`).join('')}<tr><th colspan="2">المجموع</th><th>${fmt(totalF())}</th></tr></table>`:''}<script>print()<\/script></body></html>`);w.document.close()},
   async contact(rem){closeSheet();if(!CONTACT.whatsapp){try{const{data}=await sb.rpc('get_contact');if(data)CONTACT=data}catch(e){}}const wa=(CONTACT.whatsapp||'').replace(/\D/g,'');const p=wa?'213'+wa.replace(/^0/,''):'';const myPh=(typeof USER!=='undefined'&&USER&&USER.user_metadata&&USER.user_metadata.phone)||'';
     sheet(`<h3>💬 ${rem?'عندك سؤال؟ راحنا هنا':'تواصل معنا / الاشتراك'}</h3><p>لأي معلومة، مساعدة ولا اشتراك، كلّم فريق ADM Digital مباشرة.${CONTACT.price?` الاشتراك: <b>${esc(CONTACT.price)}</b>.`:''} الكريدي تاعك يبقى محفوظ كامل.</p>${p?`<a class="btn wa" style="display:block;text-align:center;text-decoration:none" href="https://wa.me/${p}?text=${encodeURIComponent('السلام عليكم، عندي سؤال على الكارني (L’Carnet).'+(myPh?' رقمي: '+myPh:''))}">📲 كلّمنا في واتساب</a><a class="btn l" style="display:block;text-align:center;text-decoration:none;margin-top:10px" href="tel:${esc(CONTACT.whatsapp)}">📞 <span class="num">${esc(CONTACT.whatsapp)}</span></a>`:''}<a class="btn l" style="display:block;text-align:center;text-decoration:none;margin-top:10px" href="https://m.me/102198542397576" target="_blank" rel="noopener">💬 ماسنجر — صفحة ADM Digital</a><div style="display:flex;gap:8px;margin-top:10px"><a class="btn l" style="flex:1;text-align:center;text-decoration:none" href="https://www.instagram.com/admdigital.dz" target="_blank" rel="noopener">📸 إنستغرام</a><a class="btn l" style="flex:1;text-align:center;text-decoration:none" href="https://www.tiktok.com/@admdigital.dz" target="_blank" rel="noopener">🎵 تيك توك</a></div>`)},
   async changePin(){const s=sheet(`<h3>🔑 بدّل الكود السري</h3><label>الكود الجديد (6 أرقام ولا أكثر)</label><input class="inp num" id="p1" type="password" inputmode="numeric" style="text-align:center"><label>عاود الكود</label><input class="inp num" id="p2" type="password" inputmode="numeric" style="text-align:center"><div class="err" id="er"></div><button class="btn g" id="ok">✔ حفظ</button>`);
